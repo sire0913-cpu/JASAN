@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>자산 대시보드</title>
+<meta name="theme-color" content="#0a0d16">
+<link rel="manifest" href="./manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="자산 대시보드">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png">
+<style>
+  :root{
+    --bg-0:#0a0d16;
+    --bg-1:#0e1220;
+    --card:#12172a;
+    --card-2:#151b30;
+    --border:rgba(255,255,255,0.08);
+    --border-strong:rgba(255,255,255,0.14);
+    --text-1:#eef1fa;
+    --text-2:#9aa3c0;
+    --text-3:#6b7395;
+    --blue:#3b82f6;
+    --teal:#14c9a5;
+    --amber:#f5a623;
+    --slate:#8b93b8;
+    --danger:#f0605a;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 400px at 50% -100px, rgba(59,130,246,0.15), transparent),
+      var(--bg-0);
+    color:var(--text-1);
+    font-family:var(--font);
+    padding:32px 20px 80px;
+    min-height:100vh;
+  }
+  .wrap{ max-width:1100px; margin:0 auto; }
+  header{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:28px; flex-wrap:wrap; gap:10px;
+  }
+  header h1{
+    font-size:22px; font-weight:600; margin:0; letter-spacing:-0.01em;
+  }
+  header .sub{ color:var(--text-3); font-size:13px; }
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:16px;
+  }
+  @media (max-width:760px){ .grid{ grid-template-columns:1fr; } }
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:20px 22px;
+  }
+  .card.wide{ grid-column:1/-1; }
+  .card h2{
+    font-size:14px; font-weight:600; color:var(--text-2);
+    margin:0 0 16px; text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .hero-num{
+    font-size:32px; font-weight:700; letter-spacing:-0.02em; margin:2px 0 4px;
+  }
+  .delta{ font-size:14px; font-weight:600; }
+  .delta.up{ color:var(--teal); }
+  .delta.down{ color:var(--danger); }
+  .row-input{ display:flex; gap:8px; margin-bottom:12px; }
+  input{
+    background:var(--card-2);
+    border:1px solid var(--border);
+    color:var(--text-1);
+    border-radius:8px;
+    padding:9px 11px;
+    font-size:13.5px;
+    font-family:inherit;
+    outline:none;
+    min-width:0;
+  }
+  input::placeholder{ color:var(--text-3); }
+  input:focus{ border-color:var(--blue); }
+  input[type=number]{ width:120px; flex-shrink:0; }
+  .row-input input[type=text]{ flex:1; }
+  button{
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:9px 16px;
+    font-size:13.5px;
+    font-weight:600;
+    font-family:inherit;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:opacity .15s;
+  }
+  button:hover{ opacity:0.88; }
+  button.ghost{
+    background:transparent;
+    border:1px solid var(--border-strong);
+    color:var(--text-2);
+    padding:8px 14px;
+  }
+  .error-msg{
+    font-size:12.5px; color:var(--danger); margin:-4px 0 10px; display:none;
+  }
+  .list-row{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 0; border-top:1px solid var(--border);
+    font-size:14px;
+  }
+  .list-row:first-child{ border-top:none; }
+  .dot{ width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+  .list-row .name{ flex:1; }
+  .list-row .amt{ color:var(--text-2); font-variant-numeric:tabular-nums; }
+  .list-row .pct{ font-weight:600; min-width:52px; text-align:right; font-variant-numeric:tabular-nums; }
+  .del{
+    background:transparent; border:none; color:var(--text-3);
+    width:24px; height:24px; padding:0; font-size:15px; border-radius:6px;
+  }
+  .del:hover{ background:rgba(255,255,255,0.06); color:var(--danger); opacity:1; }
+  .totals{
+    display:flex; justify-content:space-between; margin-top:14px;
+    padding-top:14px; border-top:1px solid var(--border-strong);
+    font-size:14.5px;
+  }
+  .totals .label{ color:var(--text-2); }
+  .totals .val{ font-weight:700; }
+  .donut-wrap{ display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
+  canvas{ max-width:100%; }
+  .legend{ display:flex; flex-direction:column; gap:8px; font-size:13px; flex:1; min-width:140px; }
+  .legend .item{ display:flex; align-items:center; gap:8px; }
+  .legend .item .name{ flex:1; color:var(--text-2); }
+  .legend .item .val{ font-weight:600; }
+  .footer-note{
+    text-align:center; color:var(--text-3); font-size:12px; margin-top:24px;
+  }
+  .save-badge{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-3);
+  }
+  .save-dot{ width:6px; height:6px; border-radius:50%; background:var(--teal); }
+
+  .header-actions{ display:flex; align-items:center; gap:12px; }
+  .add-home-btn{
+    background:var(--card-2);
+    border:1px solid var(--border-strong);
+    color:var(--text-1);
+    border-radius:8px;
+    padding:8px 14px;
+    font-size:13px;
+    font-weight:600;
+    display:flex; align-items:center; gap:6px;
+  }
+  .add-home-btn:hover{ opacity:1; background:rgba(255,255,255,0.08); }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    display:none; align-items:flex-end; justify-content:center;
+    z-index:100; padding:0;
+  }
+  .modal-overlay.open{ display:flex; }
+  @media (min-width:640px){
+    .modal-overlay{ align-items:center; }
+  }
+  .modal{
+    background:var(--card);
+    border:1px solid var(--border-strong);
+    border-radius:16px 16px 0 0;
+    padding:22px 22px calc(22px + env(safe-area-inset-bottom));
+    max-width:420px; width:100%;
+    max-height:80vh; overflow-y:auto;
+  }
+  @media (min-width:640px){
+    .modal{ border-radius:16px; margin-bottom:40px; }
+  }
+  .modal h3{ margin:0 0 4px; font-size:17px; font-weight:700; }
+  .modal .modal-sub{ color:var(--text-3); font-size:13px; margin-bottom:18px; }
+  .step{
+    display:flex; gap:12px; margin-bottom:16px; align-items:flex-start;
+  }
+  .step-num{
+    width:24px; height:24px; border-radius:50%; background:var(--blue);
+    color:#fff; font-size:12px; font-weight:700; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+  .step-text{ font-size:14px; line-height:1.5; color:var(--text-1); }
+  .step-text b{ color:var(--teal); }
+  .modal-close{
+    width:100%; margin-top:6px; background:var(--card-2);
+    border:1px solid var(--border-strong); color:var(--text-2);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>자산 포트폴리오 대시보드</h1>
+      <div class="sub">데이터를 입력하면 자동으로 정리됩니다</div>
+    </div>
+    <div class="header-actions">
+      <span class="save-badge"><span class="save-dot"></span>자동 저장됨</span>
+      <button class="add-home-btn" id="add-home-open">📲 홈 화면에 추가</button>
+    </div>
+  </header>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h3 id="modal-title">홈 화면에 추가</h3>
+      <div class="modal-sub" id="modal-sub">아래 단계를 따라해 보세요</div>
+      <div id="modal-steps"></div>
+      <button class="modal-close" id="modal-close">닫기</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="snapshot-overlay">
+    <div class="modal">
+      <h3 id="snapshot-title">포트폴리오</h3>
+      <div class="modal-sub" id="snapshot-sub">이 시점의 자산 구성</div>
+      <div id="snapshot-empty" style="display:none; font-size:13.5px; color:var(--text-2); padding:8px 0 16px;">이 시점에는 자산 구성 데이터가 저장되어 있지 않아요. 이후부터 월별 데이터를 저장할 때마다 그 시점의 자산 구성이 함께 기록돼요.</div>
+      <div id="snapshot-body" style="display:none;">
+        <div style="position:relative; width:130px; height:130px; margin:0 auto 14px;">
+          <canvas id="snapshot-donut" width="130" height="130"></canvas>
+        </div>
+        <div id="snapshot-list"></div>
+      </div>
+      <button class="modal-close" id="snapshot-close">닫기</button>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>총 자산 / 수익률</h2>
+      <div class="sub" id="total-source-label" style="font-size:12px;color:var(--text-3);margin-bottom:2px;">총 평가금액</div>
+      <div class="hero-num" id="total-value">0 만원</div>
+      <div class="delta" id="return-rate">수익률 데이터 없음</div>
+    </div>
+
+    <div class="card">
+      <h2>자산 비중</h2>
+      <div class="donut-wrap">
+        <div style="position:relative; width:150px; height:150px; flex-shrink:0;">
+          <canvas id="donut" width="150" height="150"></canvas>
+        </div>
+        <div class="legend" id="donut-legend"></div>
+      </div>
+    </div>
+
+    <div class="card wide">
+      <h2>자산 항목 입력</h2>
+      <div class="row-input">
+        <input type="text" id="a-name" placeholder="항목명 (예: 주식, 채권, 해외주식, 금)">
+        <select id="a-type" style="width:110px;">
+          <option value="krw">원화</option>
+          <option value="usd">달러(USD)</option>
+          <option value="gold">금(g)</option>
+        </select>
+      </div>
+
+      <div class="row-input" id="a-fields-krw">
+        <input type="number" id="a-value" placeholder="금액(만원)">
+      </div>
+
+      <div class="row-input" id="a-fields-usd" style="display:none;">
+        <input type="number" id="a-usd-qty" placeholder="수량(USD)" style="width:130px;">
+        <input type="number" id="a-usd-rate" placeholder="환율(원/USD)" style="width:130px;">
+        <button class="ghost" id="a-usd-fetch" type="button">환율 조회</button>
+      </div>
+
+      <div class="row-input" id="a-fields-gold" style="display:none;">
+        <input type="number" id="a-gold-qty" placeholder="무게(g)" style="width:110px;">
+        <input type="number" id="a-gold-rate" placeholder="시세(원/g)" style="width:130px;">
+        <button class="ghost" id="a-gold-fetch" type="button">시세 조회</button>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <span id="a-fetch-status" style="font-size:12.5px; color:var(--text-3);"></span>
+      </div>
+
+      <div class="row-input">
+        <button id="a-add" style="width:100%;">추가</button>
+      </div>
+
+      <div class="error-msg" id="a-error"></div>
+      <div id="a-list"></div>
+      <div class="totals">
+        <span class="label">총 자산</span>
+        <span class="val" id="a-total">0 만원</span>
+      </div>
+    </div>
+
+    <div class="card wide">
+      <h2>월별 자산 현황</h2>
+      <div class="row-input" style="flex-wrap:wrap;">
+        <select id="m-year" style="width:100px;"></select>
+        <select id="m-month" style="width:90px;"></select>
+        <input type="number" id="m-value" placeholder="누적 자산(만원)" style="width:150px;">
+        <button id="m-add">저장</button>
+        <button class="ghost" id="m-today">이번 달로 설정</button>
+        <button class="ghost" id="m-reset" title="전체 초기화">초기화</button>
+      </div>
+      <div class="error-msg" id="m-error"></div>
+      <div style="position:relative; height:220px; margin-top:6px;">
+        <canvas id="bars"></canvas>
+      </div>
+      <div style="font-size:12px; color:var(--text-3); margin-top:8px;">막대를 누르면 그 시점의 자산 구성을 볼 수 있어요.</div>
+    </div>
+
+  </div>
+
+  <div class="footer-note">이 앱의 데이터는 이 기기의 이 브라우저에만 저장됩니다.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const COLORS = ['#3b82f6', '#14c9a5', '#f5a623', '#8b93b8', '#c084fc', '#f0605a'];
+
+let assets = [];
+let months = [];
+
+const STORAGE_KEY = 'asset_dashboard_v1';
+
+function genDefaultMonths(){
+  const now = new Date();
+  const arr = [];
+  const sample = [100, 240, 340, 460, 600, 680];
+  for(let i = 5; i >= 0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    arr.push({ year: d.getFullYear(), month: d.getMonth() + 1, value: sample[5 - i] });
+  }
+  return arr;
+}
+
+function monthLabel(y, m){
+  const now = new Date();
+  return (y === now.getFullYear()) ? (m + '월') : (y + '.' + String(m).padStart(2,'0'));
+}
+
+function sortMonths(){
+  months.sort((a, b) => (a.year - b.year) || (a.month - b.month));
+}
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      assets = parsed.assets || [];
+      months = parsed.months || [];
+      // migrate old freeform-label months (no year/month fields) to today's date bucket, best-effort
+      months = months.map(m => (m && typeof m.year === 'number') ? m : null).filter(Boolean);
+    } else {
+      assets = [
+        {name:'주식', value:700},
+        {name:'채권', value:320},
+        {name:'현금', value:130},
+        {name:'ETF', value:130}
+      ];
+      months = genDefaultMonths();
+      saveData();
+    }
+  }catch(e){
+    assets = []; months = [];
+  }
+}
+
+function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({assets, months}));
+  }catch(e){}
+}
+
+const fmt = (n) => new Intl.NumberFormat('ko-KR').format(Math.round(n));
+
+let donutChart, barsChart;
+
+function initCharts(){
+  const donutCtx = document.getElementById('donut');
+  donutChart = new Chart(donutCtx, {
+    type: 'doughnut',
+    data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderColor: '#12172a', borderWidth: 3 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => c.label + ': ' + fmt(c.raw) + '만원' } }
+      }
+    }
+  });
+
+  const barsCtx = document.getElementById('bars');
+  barsChart = new Chart(barsCtx, {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: '누적 자산', data: [], backgroundColor: '#3b82f6', borderRadius: 5, maxBarThickness: 40 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { color: '#6b7395', callback: (v) => fmt(v) }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#6b7395' }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => fmt(c.raw) + '만원' } }
+      },
+      onHover: (evt, elements) => {
+        evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+      },
+      onClick: (evt, elements) => {
+        if(!elements.length) return;
+        const idx = elements[0].index;
+        const entry = months[idx];
+        if(entry) openSnapshotModal(entry);
+      }
+    }
+  });
+}
+
+function renderAssets(){
+  const total = assets.reduce((s,a) => s + a.value, 0) || 1;
+  const totalDisplay = assets.length ? fmt(total) + ' 만원' : '0 만원';
+
+  const list = document.getElementById('a-list');
+  list.innerHTML = '';
+  assets.forEach((a, i) => {
+    const pct = (a.value / total * 100).toFixed(1);
+    const row = document.createElement('div');
+    row.className = 'list-row';
+    row.style.flexWrap = 'wrap';
+    let detail = '';
+    if(a.detail){
+      detail = '<div style="width:100%; font-size:11.5px; color:var(--text-3); margin:-4px 0 2px 20px;">' + escapeHtml(a.detail) + '</div>';
+    }
+    row.innerHTML =
+      '<span class="dot" style="background:' + COLORS[i % COLORS.length] + '"></span>' +
+      '<span class="name">' + escapeHtml(a.name) + '</span>' +
+      '<span class="amt">' + fmt(a.value) + '만원</span>' +
+      '<span class="pct">' + pct + '%</span>' +
+      '<button class="del" data-i="' + i + '" aria-label="삭제">✕</button>' +
+      detail;
+    list.appendChild(row);
+  });
+  document.getElementById('a-total').textContent = totalDisplay;
+
+  donutChart.data.labels = assets.map(a => a.name);
+  donutChart.data.datasets[0].data = assets.map(a => a.value);
+  donutChart.data.datasets[0].backgroundColor = assets.map((_,i) => COLORS[i % COLORS.length]);
+  donutChart.update();
+
+  const legend = document.getElementById('donut-legend');
+  legend.innerHTML = assets.map((a,i) =>
+    '<div class="item"><span class="dot" style="background:' + COLORS[i % COLORS.length] + '"></span>' +
+    '<span class="name">' + escapeHtml(a.name) + '</span>' +
+    '<span class="val">' + (a.value/total*100).toFixed(1) + '%</span></div>'
+  ).join('') || '<div style="color:var(--text-3);font-size:13px;">항목을 추가해 보세요</div>';
+
+  list.querySelectorAll('.del').forEach(btn => {
+    btn.addEventListener('click', () => { assets.splice(+btn.dataset.i, 1); renderAssets(); saveData(); });
+  });
+  updateTotalHero();
+}
+
+function renderMonths(){
+  sortMonths();
+  barsChart.data.labels = months.map(m => monthLabel(m.year, m.month));
+  barsChart.data.datasets[0].data = months.map(m => m.value);
+  barsChart.update();
+
+  const rateEl = document.getElementById('return-rate');
+  if(months.length >= 2){
+    const first = months[0].value;
+    const last = months[months.length-1].value;
+    if(first > 0){
+      const rate = ((last - first) / first * 100);
+      rateEl.textContent = (rate >= 0 ? '+' : '') + rate.toFixed(2) + '%';
+      rateEl.className = 'delta ' + (rate >= 0 ? 'up' : 'down');
+    } else {
+      rateEl.textContent = '수익률 계산 불가';
+      rateEl.className = 'delta';
+    }
+  } else {
+    rateEl.textContent = '월별 데이터를 2개 이상 입력하세요';
+    rateEl.className = 'delta';
+  }
+
+  updateTotalHero();
+}
+
+function updateTotalHero(){
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth() + 1;
+  const current = months.find(mo => mo.year === y && mo.month === m);
+  const heroEl = document.getElementById('total-value');
+  const labelEl = document.getElementById('total-source-label');
+  if(current){
+    heroEl.textContent = fmt(current.value) + ' 만원';
+    labelEl.textContent = '이번 달(' + y + '년 ' + m + '월) 자산 현황 기준';
+  } else {
+    const total = assets.reduce((s,a) => s + a.value, 0);
+    heroEl.textContent = fmt(total) + ' 만원';
+    labelEl.textContent = '이번 달 데이터 없음 · 자산 항목 합계로 표시 중';
+  }
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+const typeFields = {
+  krw: document.getElementById('a-fields-krw'),
+  usd: document.getElementById('a-fields-usd'),
+  gold: document.getElementById('a-fields-gold')
+};
+document.getElementById('a-type').addEventListener('change', (e) => {
+  Object.keys(typeFields).forEach(k => typeFields[k].style.display = (k === e.target.value) ? 'flex' : 'none');
+  document.getElementById('a-fetch-status').textContent = '';
+});
+
+async function fetchUsdKrwRate(){
+  const status = document.getElementById('a-fetch-status');
+  status.textContent = '환율 조회 중...';
+  try{
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    const data = await res.json();
+    const rate = data && data.rates && data.rates.KRW;
+    if(!rate) throw new Error('no rate');
+    document.getElementById('a-usd-rate').value = Math.round(rate);
+    status.textContent = '환율 조회 완료 (' + (data.time_last_update_utc || '') + ')';
+  }catch(e){
+    status.textContent = '환율 조회 실패. 직접 입력해 주세요.';
+  }
+}
+
+async function fetchGoldRate(){
+  const status = document.getElementById('a-fetch-status');
+  status.textContent = '금 시세 조회 중...';
+  try{
+    const [goldRes, fxRes] = await Promise.all([
+      fetch('https://data-asg.goldprice.org/dbXRates/USD'),
+      fetch('https://open.er-api.com/v6/latest/USD')
+    ]);
+    const goldData = await goldRes.json();
+    const fxData = await fxRes.json();
+    const usdPerOz = goldData && goldData.items && goldData.items[0] && goldData.items[0].xauPrice;
+    const usdKrw = fxData && fxData.rates && fxData.rates.KRW;
+    if(!usdPerOz || !usdKrw) throw new Error('no data');
+    const krwPerGram = (usdPerOz / 31.1034768) * usdKrw;
+    document.getElementById('a-gold-rate').value = Math.round(krwPerGram);
+    status.textContent = '금 시세 조회 완료 (국제 시세 기준, 국내 소매가와 다를 수 있어요)';
+  }catch(e){
+    status.textContent = '금 시세 조회 실패. 직접 입력해 주세요.';
+  }
+}
+
+document.getElementById('a-usd-fetch').addEventListener('click', fetchUsdKrwRate);
+document.getElementById('a-gold-fetch').addEventListener('click', fetchGoldRate);
+
+document.getElementById('a-add').addEventListener('click', () => {
+  const nameEl = document.getElementById('a-name');
+  const typeEl = document.getElementById('a-type');
+  const err = document.getElementById('a-error');
+  const name = nameEl.value.trim();
+  const type = typeEl.value;
+
+  if(!name){
+    err.textContent = '항목명을 입력하세요.';
+    err.style.display = 'block';
+    return;
+  }
+
+  let value, detail;
+
+  if(type === 'krw'){
+    const valEl = document.getElementById('a-value');
+    value = parseFloat(valEl.value);
+    if(isNaN(value) || value <= 0){
+      err.textContent = '0보다 큰 금액을 입력하세요.';
+      err.style.display = 'block';
+      return;
+    }
+    valEl.value = '';
+  } else if(type === 'usd'){
+    const qtyEl = document.getElementById('a-usd-qty');
+    const rateEl = document.getElementById('a-usd-rate');
+    const qty = parseFloat(qtyEl.value);
+    const rate = parseFloat(rateEl.value);
+    if(isNaN(qty) || qty <= 0 || isNaN(rate) || rate <= 0){
+      err.textContent = '수량(USD)과 환율을 모두 입력하세요.';
+      err.style.display = 'block';
+      return;
+    }
+    value = (qty * rate) / 10000;
+    detail = fmt(qty) + ' USD × ' + fmt(rate) + '원/USD';
+    qtyEl.value = ''; rateEl.value = '';
+  } else if(type === 'gold'){
+    const qtyEl = document.getElementById('a-gold-qty');
+    const rateEl = document.getElementById('a-gold-rate');
+    const qty = parseFloat(qtyEl.value);
+    const rate = parseFloat(rateEl.value);
+    if(isNaN(qty) || qty <= 0 || isNaN(rate) || rate <= 0){
+      err.textContent = '무게(g)와 시세를 모두 입력하세요.';
+      err.style.display = 'block';
+      return;
+    }
+    value = (qty * rate) / 10000;
+    detail = fmt(qty) + 'g × ' + fmt(rate) + '원/g';
+    qtyEl.value = ''; rateEl.value = '';
+  }
+
+  err.style.display = 'none';
+  document.getElementById('a-fetch-status').textContent = '';
+  const entry = { name, value };
+  if(detail) entry.detail = detail;
+  assets.push(entry);
+  nameEl.value = '';
+  renderAssets();
+  saveData();
+});
+
+function populateMonthSelects(){
+  const yearSel = document.getElementById('m-year');
+  const monthSel = document.getElementById('m-month');
+  const now = new Date();
+  const curYear = now.getFullYear();
+  yearSel.innerHTML = '';
+  for(let y = curYear + 1; y >= 2000; y--){
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y + '년';
+    if(y === curYear) opt.selected = true;
+    yearSel.appendChild(opt);
+  }
+  monthSel.innerHTML = '';
+  for(let m = 1; m <= 12; m++){
+    const opt = document.createElement('option');
+    opt.value = m; opt.textContent = m + '월';
+    if(m === now.getMonth() + 1) opt.selected = true;
+    monthSel.appendChild(opt);
+  }
+}
+
+document.getElementById('m-today').addEventListener('click', () => {
+  const now = new Date();
+  document.getElementById('m-year').value = now.getFullYear();
+  document.getElementById('m-month').value = now.getMonth() + 1;
+  document.getElementById('m-value').focus();
+});
+
+document.getElementById('m-add').addEventListener('click', () => {
+  const year = parseInt(document.getElementById('m-year').value, 10);
+  const month = parseInt(document.getElementById('m-month').value, 10);
+  const valEl = document.getElementById('m-value');
+  const err = document.getElementById('m-error');
+  const value = parseFloat(valEl.value);
+  if(isNaN(value) || value < 0){
+    err.textContent = '0 이상의 금액을 입력하세요.';
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  const snapshot = assets.length ? JSON.parse(JSON.stringify(assets)) : null;
+  const existing = months.find(m => m.year === year && m.month === month);
+  if(existing){
+    existing.value = value;
+    if(snapshot) existing.snapshot = snapshot;
+  } else {
+    months.push({ year, month, value, snapshot });
+  }
+  valEl.value = '';
+  renderMonths();
+  saveData();
+});
+
+document.getElementById('m-reset').addEventListener('click', () => {
+  if(confirm('월별 자산 현황 데이터를 모두 지울까요?')){
+    months = [];
+    renderMonths();
+    saveData();
+  }
+});
+
+['a-name','a-value'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') document.getElementById('a-add').click();
+  });
+});
+['m-value'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') document.getElementById('m-add').click();
+  });
+});
+
+populateMonthSelects();
+loadData();
+initCharts();
+renderAssets();
+renderMonths();
+
+function detectPlatform(){
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+  const isAndroid = /Android/.test(ua);
+  const isChrome = /Chrome/.test(ua) && !/Edg|OPR/.test(ua);
+  if(isIOS) return 'ios';
+  if(isAndroid && isChrome) return 'android-chrome';
+  if(isAndroid) return 'android-other';
+  return 'desktop';
+}
+
+const stepsByPlatform = {
+  'ios': {
+    title: 'iOS(사파리)에서 홈 화면에 추가하기',
+    sub: 'iPhone 또는 iPad의 사파리 브라우저에서 진행해 주세요',
+    steps: [
+      '화면 하단(또는 상단)의 <b>공유 버튼</b> □↑ 을 탭하세요.',
+      '메뉴를 아래로 스크롤해서 <b>"홈 화면에 추가"</b>를 탭하세요.',
+      '이름을 확인하고 오른쪽 위 <b>"추가"</b>를 탭하면 완료돼요.'
+    ]
+  },
+  'android-chrome': {
+    title: '안드로이드(크롬)에서 홈 화면에 추가하기',
+    sub: '크롬 브라우저에서 진행해 주세요',
+    steps: [
+      '오른쪽 위 <b>점 3개(메뉴)</b> 아이콘을 탭하세요.',
+      '<b>"홈 화면에 추가"</b> 또는 <b>"앱 설치"</b>를 탭하세요.',
+      '팝업에서 <b>"추가"</b>를 탭하면 완료돼요.'
+    ]
+  },
+  'android-other': {
+    title: '홈 화면에 추가하기',
+    sub: '기기 브라우저 메뉴에서 진행해 주세요',
+    steps: [
+      '브라우저 메뉴(≡ 또는 점 3개)를 여세요.',
+      '<b>"홈 화면에 추가"</b> 항목을 찾아 탭하세요.',
+      '없다면 크롬 브라우저로 이 페이지를 열어서 시도해 보세요.'
+    ]
+  },
+  'desktop': {
+    title: '데스크톱에서 사용하기',
+    sub: '홈 화면 추가는 모바일 기능이에요',
+    steps: [
+      '이 기능은 스마트폰/태블릿 브라우저에서만 지원돼요.',
+      '이 파일을 스마트폰으로 옮기거나, 링크로 접속한 뒤 다시 시도해 주세요.',
+      '데스크톱에서는 즐겨찾기(Ctrl/Cmd+D)로 저장해 두시면 편해요.'
+    ]
+  }
+};
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+
+document.getElementById('add-home-open').addEventListener('click', async () => {
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    return;
+  }
+  const platform = detectPlatform();
+  const data = stepsByPlatform[platform];
+  document.getElementById('modal-title').textContent = data.title;
+  document.getElementById('modal-sub').textContent = data.sub;
+  document.getElementById('modal-steps').innerHTML = data.steps.map((s, i) =>
+    '<div class="step"><span class="step-num">' + (i+1) + '</span><span class="step-text">' + s + '</span></div>'
+  ).join('');
+  document.getElementById('modal-overlay').classList.add('open');
+});
+
+document.getElementById('modal-close').addEventListener('click', () => {
+  document.getElementById('modal-overlay').classList.remove('open');
+});
+document.getElementById('modal-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'modal-overlay') document.getElementById('modal-overlay').classList.remove('open');
+});
+
+let snapshotChart = null;
+
+function openSnapshotModal(entry){
+  const titleEl = document.getElementById('snapshot-title');
+  const subEl = document.getElementById('snapshot-sub');
+  const emptyEl = document.getElementById('snapshot-empty');
+  const bodyEl = document.getElementById('snapshot-body');
+  const listEl = document.getElementById('snapshot-list');
+
+  titleEl.textContent = monthLabel(entry.year, entry.month) + ' 포트폴리오';
+  subEl.textContent = entry.year + '년 ' + entry.month + '월 · 총 ' + fmt(entry.value) + '만원';
+
+  if(!entry.snapshot || !entry.snapshot.length){
+    emptyEl.style.display = 'block';
+    bodyEl.style.display = 'none';
+  } else {
+    emptyEl.style.display = 'none';
+    bodyEl.style.display = 'block';
+
+    const snap = entry.snapshot;
+    const total = snap.reduce((s,a) => s + a.value, 0) || 1;
+
+    if(snapshotChart) snapshotChart.destroy();
+    snapshotChart = new Chart(document.getElementById('snapshot-donut'), {
+      type: 'doughnut',
+      data: { labels: snap.map(a => a.name), datasets: [{ data: snap.map(a => a.value), backgroundColor: snap.map((_,i) => COLORS[i % COLORS.length]), borderColor: '#12172a', borderWidth: 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.label + ': ' + fmt(c.raw) + '만원' } } } }
+    });
+
+    listEl.innerHTML = snap.map((a,i) => {
+      const pct = (a.value / total * 100).toFixed(1);
+      return '<div class="list-row"><span class="dot" style="background:' + COLORS[i % COLORS.length] + '"></span>' +
+        '<span class="name">' + escapeHtml(a.name) + '</span>' +
+        '<span class="amt">' + fmt(a.value) + '만원</span>' +
+        '<span class="pct">' + pct + '%</span></div>';
+    }).join('');
+  }
+
+  document.getElementById('snapshot-overlay').classList.add('open');
+}
+
+document.getElementById('snapshot-close').addEventListener('click', () => {
+  document.getElementById('snapshot-overlay').classList.remove('open');
+});
+document.getElementById('snapshot-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'snapshot-overlay') document.getElementById('snapshot-overlay').classList.remove('open');
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
