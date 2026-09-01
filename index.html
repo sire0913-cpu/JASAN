@@ -315,6 +315,11 @@
     font-size:13px; color:var(--text-2); text-decoration:none;
   }
   .footer-link:hover{ color:var(--blue); text-decoration:underline; }
+  .save-watermark{
+    display:none; text-align:center; margin-top:10px;
+    font-size:13px; color:var(--text-2);
+  }
+  .save-watermark.watermark-show{ display:block; }
   .bottom-actions{
     display:grid;
     grid-template-columns:repeat(2, 1fr);
@@ -634,7 +639,8 @@
     <input type="file" id="backup-import-input" accept="application/json,.json" style="display:none;">
   </div>
 
-  <a class="footer-link" href="https://naver.me/5c8Xm2kR" target="_blank" rel="noopener noreferrer">@ 재테크바로서기</a>
+  <a class="footer-link" href="https://naver.me/5c8Xm2kR" target="_blank" rel="noopener noreferrer">Ⓒ 재테크바로서기</a>
+  <div class="save-watermark">재테크바로서기 네이버카페로 초대합니다</div>
 
 </div>
 </div>
@@ -1647,6 +1653,7 @@ document.getElementById('save-image-btn').addEventListener('click', async () => 
   const originalText = btn.textContent;
   const headerActions = document.querySelector('.header-actions');
   const bottomActions = document.getElementById('bottom-actions');
+  const watermark = document.querySelector('.save-watermark');
   const prevHeaderDisplay = headerActions.style.display;
   const prevBottomDisplay = bottomActions.style.display;
 
@@ -1654,6 +1661,7 @@ document.getElementById('save-image-btn').addEventListener('click', async () => 
   btn.textContent = '이미지 생성 중...';
   headerActions.style.display = 'none'; // 캡처 화면에서 버튼들은 제외하고 데이터만 담기
   bottomActions.style.display = 'none';
+  if(watermark) watermark.classList.add('watermark-show'); // 저장되는 이미지에만 워터마크 문구를 잠깐 표시
 
   try{
     const target = document.querySelector('.wrap');
@@ -1680,6 +1688,7 @@ document.getElementById('save-image-btn').addEventListener('click', async () => 
   }finally{
     headerActions.style.display = prevHeaderDisplay;
     bottomActions.style.display = prevBottomDisplay;
+    if(watermark) watermark.classList.remove('watermark-show'); // 캡처가 끝나면 평소처럼 다시 숨김
     btn.disabled = false;
     btn.textContent = originalText;
   }
