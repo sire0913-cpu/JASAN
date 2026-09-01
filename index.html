@@ -1,0 +1,2130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>자산 대시보드</title>
+<meta name="theme-color" content="#0a0d16">
+<link rel="manifest" href="./manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="자산 대시보드">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png">
+<style>
+  :root{
+    --bg-0:#0a0d16;
+    --bg-1:#0e1220;
+    --card:#12172a;
+    --card-2:#151b30;
+    --border:rgba(255,255,255,0.08);
+    --border-strong:rgba(255,255,255,0.14);
+    --text-1:#eef1fa;
+    --text-2:#9aa3c0;
+    --text-3:#6b7395;
+    --blue:#3b82f6;
+    --teal:#14c9a5;
+    --amber:#f5a623;
+    --slate:#8b93b8;
+    --danger:#f0605a;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  }
+  /* 화이트(라이트) 테마 - body에 .theme-light 클래스가 붙으면 적용됨 */
+  body.theme-light{
+    --bg-0:#f4f5f9;
+    --bg-1:#ffffff;
+    --card:#ffffff;
+    --card-2:#eef0f6;
+    --border:rgba(0,0,0,0.08);
+    --border-strong:rgba(0,0,0,0.14);
+    --text-1:#1a1d29;
+    --text-2:#565b7a;
+    --text-3:#7d829c;
+    --blue:#2563eb;
+    --teal:#0d9488;
+    --amber:#b45309;
+    --slate:#5f6480;
+    --danger:#dc2626;
+  }
+  body.theme-light .card{
+    box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  }
+  *{ box-sizing:border-box; }
+  html{ width:100%; overflow-x:auto; }
+  body{
+    margin:0;
+    width:100%;
+    overflow-x:auto;
+    background:
+      radial-gradient(ellipse 900px 400px at 50% -100px, rgba(59,130,246,0.15), transparent),
+      var(--bg-0);
+    color:var(--text-1);
+    font-family:var(--font);
+    padding:
+      calc(24px + env(safe-area-inset-top))
+      calc(16px + env(safe-area-inset-right))
+      calc(60px + env(safe-area-inset-bottom))
+      calc(16px + env(safe-area-inset-left));
+    min-height:100vh;
+    min-height:100dvh;
+  }
+  .wrap{ max-width:1100px; margin:0 auto; width:100%; }
+  header{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    margin-bottom:28px; flex-wrap:wrap; gap:10px;
+  }
+  header h1{
+    font-size:21px; font-weight:600; margin:0; letter-spacing:-0.01em;
+  }
+  header .sub{ color:var(--text-3); font-size:13px; }
+  .header-title-row{ display:flex; align-items:center; gap:2px; flex-wrap:wrap; }
+  .save-badge{ margin-top:6px; }
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:16px;
+    width:100%;
+    min-width:0;
+  }
+  /* 세로(포트레이트) 폰 화면: 한 줄에 카드 1개 */
+  @media (max-width:760px) and (orientation:portrait){ .grid{ grid-template-columns:1fr; } }
+  /* 가로(랜드스케이프) 폰 화면: 카드 2개를 유지하되 여백/폰트를 조금 줄여 화면에 맞춤 */
+  @media (orientation:landscape) and (max-height:500px){
+    body{ padding-top:calc(14px + env(safe-area-inset-top)); padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
+    header{ margin-bottom:16px; }
+    .card{ padding:14px 16px; }
+    .hero-num{ font-size:26px; }
+  }
+  /* 아주 좁은 화면(작은 폰) 대응 */
+  @media (max-width:360px){
+    .card{ padding:16px 14px; }
+    .hero-num{ font-size:27px; }
+    input[type=number]{ width:100px; }
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:20px 22px;
+    min-width:0;
+  }
+  .card.wide{ grid-column:1/-1; }
+  .card h2{
+    font-size:14px; font-weight:600; color:var(--text-2);
+    margin:0 0 16px; text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .hero-num{
+    font-size:32px; font-weight:700; letter-spacing:-0.02em; margin:2px 0 4px;
+  }
+  .delta{ font-size:14px; font-weight:600; }
+  .delta.up{ color:var(--teal); }
+  .delta.down{ color:var(--danger); }
+  .row-input{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  input, select{
+    background:var(--card-2);
+    border:1px solid var(--border);
+    color:var(--text-1);
+    border-radius:8px;
+    padding:11px 12px;
+    font-size:14.5px;
+    font-family:inherit;
+    outline:none;
+    min-width:0;
+    min-height:44px;
+  }
+  select{
+    appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%239aa3c0'><path d='M5.5 7.5l4.5 4.5 4.5-4.5' stroke='%239aa3c0' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 10px center;
+    padding-right:30px;
+    cursor:pointer;
+  }
+  input::placeholder{ color:var(--text-3); }
+  input:focus, select:focus{ border-color:var(--blue); }
+  input[type=number]{ width:120px; flex-shrink:0; }
+  .row-input input[type=text]{ flex:1; }
+  button{
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:11px 16px;
+    font-size:14.5px;
+    font-weight:600;
+    font-family:inherit;
+    cursor:pointer;
+    white-space:nowrap;
+    min-height:44px;
+    transition:opacity .15s;
+  }
+  button:hover{ opacity:0.88; }
+  button.ghost{
+    background:transparent;
+    border:1px solid var(--border-strong);
+    color:var(--text-2);
+    padding:8px 14px;
+  }
+  .error-msg{
+    font-size:12.5px; color:var(--danger); margin:-4px 0 10px; display:none;
+  }
+  .list-row{
+    display:flex; align-items:center; gap:10px;
+    padding:11px 0; border-top:1px solid var(--border);
+    font-size:14px;
+  }
+  .list-row:first-child{ border-top:none; }
+  .dot{ width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+  .list-row .name{ flex:1; word-break:keep-all; overflow-wrap:break-word; line-height:1.4; }
+  .list-row .amt{ color:var(--text-1); font-variant-numeric:tabular-nums; }
+  .list-row .pct{ font-weight:600; min-width:52px; text-align:right; font-variant-numeric:tabular-nums; }
+  .del{
+    background:transparent; border:none; color:var(--text-3);
+    width:44px; height:44px; padding:0; font-size:17px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .del:hover{ background:rgba(255,255,255,0.06); color:var(--danger); opacity:1; }
+  .del:active{ background:rgba(240,96,90,0.14); color:var(--danger); }
+  .field-label{
+    font-size:11.5px; color:var(--text-3); margin:0 0 6px 2px; display:block;
+  }
+  .toast{
+    position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom));
+    transform:translateX(-50%) translateY(80px);
+    background:var(--card-2); border:1px solid var(--border-strong);
+    color:var(--text-1); border-radius:12px; padding:12px 14px;
+    display:flex; align-items:center; gap:12px; font-size:13.5px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.28); z-index:200;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+    max-width:calc(100vw - 32px);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+  .toast button{
+    background:transparent; border:none; color:var(--blue);
+    font-weight:700; padding:4px 6px; font-size:13.5px; flex-shrink:0;
+  }
+  .toast .toast-msg{ white-space:nowrap; }
+  .chart-hint{
+    display:flex; align-items:center; gap:6px; margin-top:10px;
+    font-size:12.5px; color:var(--text-2);
+    background:var(--card-2); border:1px solid var(--border);
+    border-radius:8px; padding:8px 10px;
+  }
+  .chart-hint .hint-icon{
+    font-size:14px; flex-shrink:0;
+    animation: tapHint 1.6s ease-in-out 2;
+  }
+  .cagr-box{
+    margin-top:10px;
+    background:var(--card-2); border:1px solid var(--border);
+    border-radius:10px; padding:12px 14px;
+  }
+  .cagr-label{ font-size:11.5px; color:var(--text-3); margin-bottom:4px; }
+  .cagr-value{ font-size:20px; font-weight:700; letter-spacing:-0.01em; }
+  .cagr-value.up{ color:var(--teal); }
+  .cagr-value.down{ color:var(--danger); }
+  .cagr-period{ font-size:12px; color:var(--text-3); margin-top:3px; }
+  .cagr-yearly-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:7px 0; border-top:1px solid var(--border); font-size:13.5px;
+  }
+  .cagr-yearly-row:first-child{ border-top:none; }
+  .cagr-yearly-row .yr{ color:var(--text-2); }
+  .cagr-yearly-row .yr-note{ font-size:11px; color:var(--text-3); margin-left:6px; }
+  .cagr-yearly-row .yr-right{ text-align:right; display:flex; align-items:baseline; gap:6px; }
+  .cagr-yearly-row .yr-rate{ font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .cagr-yearly-row .yr-rate.up{ color:var(--teal); }
+  .cagr-yearly-row .yr-rate.down{ color:var(--danger); }
+  .cagr-yearly-row .yr-rate.flat{ color:var(--text-2); }
+  .cagr-yearly-row .yr-amt{
+    font-size:11.5px; color:var(--text-3); font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  .cagr-yearly-row .yr-amt.up{ color:var(--teal); }
+  .cagr-yearly-row .yr-amt.down{ color:var(--danger); }
+  @keyframes tapHint{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-3px); }
+  }
+  .modal-actions{ display:flex; gap:8px; margin-top:6px; }
+  .modal-actions button{ flex:1; }
+  .btn-danger-ghost{
+    background:transparent; border:1px solid rgba(240,96,90,0.4); color:var(--danger);
+  }
+  .bg-file-label{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    width:100%; cursor:pointer; text-align:center;
+  }
+  #pinch-zoom-wrap{
+    transform-origin: 50% 0;
+    transition: transform 0.03s linear;
+  }
+  #zoom-reset-chip{
+    position:fixed; left:50%; top:calc(10px + env(safe-area-inset-top));
+    transform:translateX(-50%);
+    background:var(--card-2); border:1px solid var(--border-strong);
+    color:var(--text-1); border-radius:20px; padding:8px 16px;
+    font-size:13px; font-weight:600; z-index:150;
+    display:none; align-items:center; gap:6px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.3);
+    -webkit-tap-highlight-color:transparent;
+  }
+  #zoom-reset-chip.show{ display:flex; }
+  #bg-preview-wrap img{
+    width:100%; border-radius:10px; display:block; max-height:180px;
+    object-fit:cover; border:1px solid var(--border);
+  }
+  /* 배경 이미지가 적용되면 카드들을 반투명 유리 느낌으로 바꿔서 이미지가 비쳐 보이게 함 */
+  body.has-bg-image{
+    --card: rgba(18,23,42,0.74);
+    --card-2: rgba(21,27,48,0.74);
+  }
+  body.has-bg-image.theme-light{
+    --card: rgba(255,255,255,0.8);
+    --card-2: rgba(238,240,246,0.82);
+  }
+  body.has-bg-image .card{
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .totals{
+    display:flex; justify-content:space-between; margin-top:14px;
+    padding-top:14px; border-top:1px solid var(--border-strong);
+    font-size:14.5px;
+  }
+  .totals .label{ color:var(--text-2); }
+  .totals .val{ font-weight:700; }
+  .donut-wrap{ display:flex; flex-direction:column; align-items:center; gap:18px; }
+  canvas{ max-width:100%; }
+  .legend{
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+    font-size:13.5px; width:100%;
+  }
+  .legend .item{ display:flex; align-items:flex-start; gap:9px; min-width:0; }
+  .legend .item .dot{ margin-top:4px; }
+  .legend .item .name{ flex:1; color:var(--text-1); white-space:normal; word-break:keep-all; line-height:1.4; }
+  .legend .item .val{ font-weight:600; flex-shrink:0; padding-top:1px; }
+  .footer-note{
+    text-align:center; color:var(--text-3); font-size:12px; margin-top:24px;
+  }
+  .footer-link{
+    display:block; text-align:center; margin-top:24px;
+    font-size:13px; color:var(--text-2); text-decoration:none;
+  }
+  .footer-link:hover{ color:var(--blue); text-decoration:underline; }
+  .bottom-actions{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:10px;
+    margin-top:20px;
+  }
+  .bottom-actions .add-home-btn{
+    flex-direction:column;
+    justify-content:center;
+    gap:6px;
+    padding:16px 8px;
+    font-size:12.5px;
+    line-height:1.3;
+    text-align:center;
+    border-radius:14px;
+    white-space:normal;
+  }
+  .bottom-actions .add-home-btn:nth-child(5){
+    grid-column:1 / -1;
+  }
+  .bottom-actions .add-home-btn .btn-icon{
+    font-size:20px;
+    line-height:1;
+  }
+  .save-badge{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-3);
+  }
+  .save-dot{ width:6px; height:6px; border-radius:50%; background:var(--teal); }
+
+  .header-actions{ display:flex; align-items:center; gap:12px; }
+  .add-home-btn{
+    background:var(--card-2);
+    border:1px solid var(--border-strong);
+    color:var(--text-1);
+    border-radius:8px;
+    padding:8px 14px;
+    font-size:13px;
+    font-weight:600;
+    display:flex; align-items:center; gap:6px;
+  }
+  .add-home-btn:hover{ opacity:1; background:rgba(255,255,255,0.08); }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    display:none; align-items:flex-end; justify-content:center;
+    z-index:100; padding:0;
+  }
+  .modal-overlay.open{ display:flex; }
+  @media (min-width:640px){
+    .modal-overlay{ align-items:center; }
+  }
+  .modal{
+    background:var(--card);
+    border:1px solid var(--border-strong);
+    border-radius:16px 16px 0 0;
+    padding:22px 22px calc(22px + env(safe-area-inset-bottom));
+    max-width:420px; width:100%;
+    max-height:80vh; overflow-y:auto;
+  }
+  @media (min-width:640px){
+    .modal{ border-radius:16px; margin-bottom:40px; }
+  }
+  .modal h3{ margin:0 0 4px; font-size:17px; font-weight:700; }
+  .modal .modal-sub{ color:var(--text-3); font-size:13px; margin-bottom:18px; }
+  .step{
+    display:flex; gap:12px; margin-bottom:16px; align-items:flex-start;
+  }
+  .step-num{
+    width:24px; height:24px; border-radius:50%; background:var(--blue);
+    color:#fff; font-size:12px; font-weight:700; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; margin-top:1px;
+  }
+  .step-text{ font-size:14px; line-height:1.5; color:var(--text-1); }
+  .step-text b{ color:var(--teal); }
+  .modal-close{
+    width:100%; margin-top:6px; background:var(--card-2);
+    border:1px solid var(--border-strong); color:var(--text-2);
+  }
+</style>
+</head>
+<body>
+<div id="zoom-reset-chip"><span>🔍</span><span id="zoom-reset-label">100%</span><span> · 원래대로</span></div>
+
+<!-- 화면 확대/축소(핀치줌) 대상 밖에 둬야 하는 고정 위치 요소들: 모달, 토스트 -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">홈 화면에 추가</h3>
+    <div class="modal-sub" id="modal-sub">아래 단계를 따라해 보세요</div>
+    <div id="modal-steps"></div>
+    <button class="modal-close" id="modal-close">닫기</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="snapshot-overlay">
+  <div class="modal">
+    <h3 id="snapshot-title">포트폴리오</h3>
+    <div class="modal-sub" id="snapshot-sub">이 시점의 자산 구성</div>
+    <div class="chart-hint" id="snapshot-swipe-hint" style="display:none;"><span class="hint-icon">↔️</span><span>좌우로 스와이프하면 이전·다음 달로 이동해요.</span></div>
+    <div id="snapshot-empty" style="display:none; font-size:13.5px; color:var(--text-2); padding:8px 0 16px;">이 시점에는 자산 구성 데이터가 저장되어 있지 않아요. 이후부터 월별 데이터를 저장할 때마다 그 시점의 자산 구성이 함께 기록돼요.</div>
+    <div id="snapshot-body" style="display:none;">
+      <div style="position:relative; width:130px; height:130px; margin:0 auto 14px;">
+        <canvas id="snapshot-donut" width="130" height="130"></canvas>
+      </div>
+      <div id="snapshot-list"></div>
+    </div>
+    <div class="modal-actions" id="snapshot-actions">
+      <button class="ghost" id="snapshot-edit">✎ 이 달 값 수정</button>
+      <button class="btn-danger-ghost" id="snapshot-delete">이 달만 삭제</button>
+    </div>
+    <div class="modal-sub" id="snapshot-current-note" style="display:none; margin:6px 0 0;">이번 달 데이터는 위 "자산 항목 입력"의 합계로 자동 계산돼요. 값을 바꾸려면 자산 항목을 수정해 주세요.</div>
+    <button class="modal-close" id="snapshot-close">닫기</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bg-modal-overlay">
+  <div class="modal">
+    <h3>배경 이미지 설정</h3>
+    <div class="modal-sub">가지고 있는 사진이나 좋아하는 캐릭터 이미지로 배경을 꾸며보세요</div>
+
+    <div id="bg-preview-wrap" style="display:none; margin-bottom:14px;">
+      <img id="bg-preview" alt="배경 미리보기">
+    </div>
+
+    <label class="add-home-btn bg-file-label" for="bg-file-input">📁 이미지 선택</label>
+    <input type="file" id="bg-file-input" accept="image/*" style="display:none;">
+
+    <div id="bg-status" style="font-size:12.5px; color:var(--text-3); margin:10px 2px 4px;"></div>
+    <div style="font-size:11.5px; color:var(--text-3); margin:0 2px 14px;">이미지는 서버로 전송되지 않고 이 기기에만 저장돼요. 큰 이미지는 자동으로 축소돼요.</div>
+
+    <div class="modal-actions">
+      <button class="btn-danger-ghost" id="bg-remove">배경 제거</button>
+    </div>
+    <button class="modal-close" id="bg-modal-close">닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <span class="toast-msg" id="toast-msg"></span>
+  <button id="toast-undo">실행 취소</button>
+</div>
+
+<div id="pinch-zoom-wrap">
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="header-title-row">
+        <h1 id="app-title" style="display:inline">자산 포트폴리오 대시보드</h1>
+        <button id="title-edit-btn" aria-label="이름 변경" title="이름 변경" style="background:transparent;border:none;color:var(--text-3);font-size:14px;padding:2px 6px;cursor:pointer;">✎</button>
+      </div>
+      <span class="save-badge"><span class="save-dot"></span>자동 저장됨</span>
+    </div>
+    <div class="header-actions">
+      <button class="add-home-btn" id="add-home-open">📲 홈 화면에 추가</button>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>총 자산</h2>
+      <div class="sub" id="total-source-label" style="font-size:12px;color:var(--text-3);margin-bottom:2px;">총 평가금액</div>
+      <div class="hero-num" id="total-value">0 만원</div>
+      <div class="delta" id="return-rate">자산증가율 데이터 없음</div>
+    </div>
+
+    <div class="card">
+      <h2>자산 비중</h2>
+      <div class="donut-wrap">
+        <div style="position:relative; width:150px; height:150px; flex-shrink:0;">
+          <canvas id="donut" width="150" height="150"></canvas>
+        </div>
+        <div class="legend" id="donut-legend"></div>
+      </div>
+    </div>
+
+    <div class="card wide">
+      <h2>자산 항목 입력</h2>
+      <span class="field-label">항목명 · 자산 유형</span>
+      <div class="row-input">
+        <input type="text" id="a-name" placeholder="항목명 (예: 주식, 채권, 해외주식, 금)">
+        <select id="a-type" style="width:110px;">
+          <option value="krw">원화</option>
+          <option value="usd">달러(USD)</option>
+          <option value="gold">금(g)</option>
+        </select>
+      </div>
+
+      <div id="a-fields-krw">
+        <span class="field-label">평가 금액</span>
+        <div class="row-input">
+          <input type="number" id="a-value" placeholder="금액(만원)">
+        </div>
+      </div>
+
+      <div id="a-fields-usd" style="display:none;">
+        <span class="field-label">보유 수량 · 적용 환율</span>
+        <div class="row-input">
+          <input type="number" id="a-usd-qty" placeholder="수량(USD)" style="flex:1; width:auto; min-width:100px;">
+          <input type="number" id="a-usd-rate" placeholder="환율(원/USD)" style="flex:1; width:auto; min-width:100px;">
+        </div>
+        <div class="row-input">
+          <button class="ghost" id="a-usd-fetch" type="button" style="width:100%;">🔄 환율 새로고침</button>
+        </div>
+      </div>
+
+      <div id="a-fields-gold" style="display:none;">
+        <span class="field-label">보유 무게 · 적용 시세</span>
+        <div class="row-input">
+          <input type="number" id="a-gold-qty" placeholder="무게(g)" style="flex:1; width:auto; min-width:100px;">
+          <input type="number" id="a-gold-rate" placeholder="시세(원/g)" style="flex:1; width:auto; min-width:100px;">
+        </div>
+        <div class="row-input">
+          <button class="ghost" id="a-gold-fetch" type="button" style="width:100%;">🔄 시세 새로고침</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <span id="a-fetch-status" style="font-size:12.5px; color:var(--text-3);"></span>
+      </div>
+
+      <div class="row-input">
+        <button id="a-add" style="width:100%;">추가</button>
+      </div>
+
+      <div class="error-msg" id="a-error"></div>
+      <div id="a-list"></div>
+      <div class="totals">
+        <span class="label">합계</span>
+        <span class="val" id="a-total">0 만원</span>
+      </div>
+    </div>
+
+    <div class="card wide">
+      <h2>월별 자산 현황</h2>
+      <span class="field-label">연도 · 월</span>
+      <div class="row-input">
+        <select id="m-year" style="flex:1;"></select>
+        <select id="m-month" style="flex:1;"></select>
+      </div>
+      <span class="field-label">해당 시점 누적 자산</span>
+      <div class="row-input">
+        <input type="number" id="m-value" placeholder="누적 자산(만원)" style="flex:1; width:auto;">
+        <button id="m-add">저장</button>
+      </div>
+      <div class="row-input">
+        <button class="ghost" id="m-today" style="flex:1;">이번 달로 설정</button>
+        <button class="btn-danger-ghost" id="m-reset" title="전체 월별 데이터를 지웁니다" style="flex:1;">전체 초기화</button>
+      </div>
+      <div class="error-msg" id="m-error"></div>
+      <div id="bars-scroll" style="overflow-x:auto; -webkit-overflow-scrolling:touch; margin-top:6px; width:100%; min-width:0;">
+        <div id="bars-inner" style="position:relative; height:220px;">
+          <canvas id="bars"></canvas>
+        </div>
+      </div>
+      <div class="chart-hint"><span class="hint-icon">👆</span><span>막대를 누르면 그 시점의 자산 구성을 확인하고, 수정·삭제도 할 수 있어요.</span></div>
+      <div class="cagr-box" id="cagr-box">
+        <div class="cagr-label">연평균 자산증가율</div>
+        <div class="cagr-value" id="cagr-value">데이터 부족</div>
+        <div class="cagr-period" id="cagr-period"></div>
+      </div>
+      <div class="cagr-box" id="cagr-yearly-box" style="display:none;">
+        <div class="cagr-label">연도별 자산증가율</div>
+        <div id="cagr-yearly-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-actions" id="bottom-actions">
+    <button class="add-home-btn" id="theme-toggle-btn"><span class="btn-icon">🌗</span><span>테마 변경</span></button>
+    <button class="add-home-btn" id="bg-image-open"><span class="btn-icon">🎨</span><span>배경 이미지</span></button>
+    <button class="add-home-btn" id="save-image-btn"><span class="btn-icon">🖼️</span><span>이미지로 저장</span></button>
+    <button class="add-home-btn" id="backup-export-btn"><span class="btn-icon">⬇️</span><span>백업 저장</span></button>
+    <button class="add-home-btn" id="backup-import-btn"><span class="btn-icon">⬆️</span><span>백업 불러오기</span></button>
+    <input type="file" id="backup-import-input" accept="application/json,.json" style="display:none;">
+  </div>
+
+  <a class="footer-link" href="https://naver.me/5c8Xm2kR" target="_blank" rel="noopener noreferrer">@ 재테크바로서기</a>
+
+</div>
+</div>
+
+<!--
+  ⚠️ APK로 패키징할 때 반드시 확인:
+  아래 두 줄은 지금 인터넷 CDN에서 라이브러리를 매번 내려받는 방식이라,
+  APK 실행 시점에 인터넷 연결이 없으면 차트/이미지저장 기능이 동작하지 않습니다.
+  아래 두 파일을 미리 내려받아 프로젝트 폴더(예: ./vendor/)에 넣고,
+  src 경로를 로컬 경로(예: "./vendor/chart.umd.min.js")로 바꿔서 오프라인에서도
+  동작하도록 만드세요.
+  - 아래 두 파일을 www/vendor/ 폴더에 넣어서 오프라인에서도 작동하게 함
+  - vendor/chart.umd.min.js
+  - vendor/html2canvas.min.js
+-->
+<script src="./vendor/chart.umd.min.js"></script>
+<script src="./vendor/html2canvas.min.js"></script>
+<script>
+// 자산 항목이 많아져도 색상이 겹치지 않도록 60개의 서로 다른 색상을 자동 생성
+// (황금각 회전으로 색상을 배치해서 이웃한 항목끼리도 최대한 구분되게 함)
+function generateColorPalette(count){
+  const goldenAngle = 137.508;
+  const colors = [];
+  for(let i = 0; i < count; i++){
+    const hue = (i * goldenAngle) % 360;
+    const sat = [68, 78, 58][i % 3];   // 채도를 살짝 번갈아 대비를 높임
+    const light = [58, 68, 48][i % 3]; // 어두운 배경에서 잘 보이도록 밝기 범위 유지
+    colors.push('hsl(' + hue.toFixed(1) + ', ' + sat + '%, ' + light + '%)');
+  }
+  return colors;
+}
+const COLORS = generateColorPalette(60);
+
+let assets = [];
+let months = [];
+const DEFAULT_APP_NAME = '자산 포트폴리오 대시보드';
+let appName = DEFAULT_APP_NAME;
+let theme = 'dark'; // 'dark' 또는 'light'
+let bgImage = null; // 사용자가 설정한 배경 이미지 (데이터 URL) 또는 null
+
+const STORAGE_KEY = 'asset_dashboard_v1';
+
+function genDefaultMonths(){
+  const now = new Date();
+  const arr = [];
+  const sample = [100, 240, 340, 460, 600, 680];
+  for(let i = 5; i >= 0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    arr.push({ year: d.getFullYear(), month: d.getMonth() + 1, value: sample[5 - i] });
+  }
+  return arr;
+}
+
+function monthLabel(y, m){
+  const now = new Date();
+  return (y === now.getFullYear()) ? (m + '월') : (y + '.' + String(m).padStart(2,'0'));
+}
+
+// 그래프 x축 전용: 여러 연도가 한 화면에 섞여 나열되므로, 짧은 표기("4월")를 섞지 않고
+// 항상 "연도.월" 형식으로 통일해서 라벨이 뒤죽박죽 보이지 않게 함
+function monthAxisLabel(y, m){
+  return y + '.' + String(m).padStart(2,'0');
+}
+
+function sortMonths(){
+  months.sort((a, b) => (a.year - b.year) || (a.month - b.month));
+}
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      assets = parsed.assets || [];
+      months = parsed.months || [];
+      appName = (typeof parsed.appName === 'string' && parsed.appName.trim()) ? parsed.appName.trim() : DEFAULT_APP_NAME;
+      theme = (parsed.theme === 'light') ? 'light' : 'dark';
+      bgImage = (typeof parsed.bgImage === 'string' && parsed.bgImage) ? parsed.bgImage : null;
+      // migrate old freeform-label months (no year/month fields) to today's date bucket, best-effort
+      months = months.map(m => (m && typeof m.year === 'number') ? m : null).filter(Boolean);
+    } else {
+      assets = [
+        {name:'국내주식', value:400},
+        {name:'해외주식', value:300},
+        {name:'채권', value:200},
+        {name:'부동산', value:800},
+        {name:'삼성전자', value:150},
+        {name:'SK하이닉스', value:100}
+      ];
+      months = genDefaultMonths();
+      appName = DEFAULT_APP_NAME;
+      theme = 'dark';
+      bgImage = null;
+      saveData();
+    }
+  }catch(e){
+    assets = []; months = []; appName = DEFAULT_APP_NAME; theme = 'dark'; bgImage = null;
+  }
+  applyAppName();
+  applyTheme();
+}
+
+function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({assets, months, appName, theme, bgImage}));
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+function cssVar(name){
+  return getComputedStyle(document.body).getPropertyValue(name).trim();
+}
+
+function chartGridColor(){
+  return theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.06)';
+}
+
+function applyTheme(){
+  document.body.classList.toggle('theme-light', theme === 'light');
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if(themeMeta) themeMeta.setAttribute('content', theme === 'light' ? '#f4f5f9' : '#0a0d16');
+
+  const toggleBtn = document.getElementById('theme-toggle-btn');
+  if(toggleBtn){
+    toggleBtn.innerHTML = (theme === 'light')
+      ? '<span class="btn-icon">🌙</span><span>블랙 테마로 전환</span>'
+      : '<span class="btn-icon">☀️</span><span>화이트 테마로 전환</span>';
+  }
+  applyChartTheme();
+  applyBgImage();
+}
+
+// 사용자가 고른 배경 이미지를 body 배경에 반영. 테마에 맞는 반투명 오버레이를 함께 얹어서
+// 이미지가 너무 진해도 카드/글자 대비가 유지되도록 함
+function applyBgImage(){
+  if(bgImage){
+    const overlay = (theme === 'light')
+      ? 'linear-gradient(rgba(244,245,249,0.86), rgba(244,245,249,0.86))'
+      : 'linear-gradient(rgba(10,13,22,0.82), rgba(10,13,22,0.82))';
+    document.body.style.backgroundImage = overlay + ', url(' + bgImage + ')';
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundAttachment = 'fixed';
+    document.body.classList.add('has-bg-image');
+  } else {
+    document.body.style.backgroundImage = '';
+    document.body.style.backgroundSize = '';
+    document.body.style.backgroundPosition = '';
+    document.body.style.backgroundAttachment = '';
+    document.body.classList.remove('has-bg-image');
+  }
+}
+
+function applyChartTheme(){
+  if(donutChart){
+    donutChart.data.datasets[0].borderColor = cssVar('--card');
+    donutChart.update();
+  }
+  if(barsChart){
+    barsChart.data.datasets[0].backgroundColor = cssVar('--blue');
+    barsChart.options.scales.y.grid.color = chartGridColor();
+    barsChart.options.scales.y.ticks.color = cssVar('--text-3');
+    barsChart.options.scales.x.ticks.color = cssVar('--text-3');
+    barsChart.update();
+  }
+}
+
+function applyAppName(){
+  const titleEl = document.getElementById('app-title');
+  if(titleEl) titleEl.textContent = appName;
+  document.title = appName;
+}
+
+const fmt = (n) => new Intl.NumberFormat('ko-KR').format(Math.round(n));
+
+let donutChart, barsChart;
+
+function initCharts(){
+  const donutCtx = document.getElementById('donut');
+  donutChart = new Chart(donutCtx, {
+    type: 'doughnut',
+    data: { labels: [], datasets: [{ data: [], backgroundColor: [], borderColor: '#12172a', borderWidth: 3 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => c.label + ': ' + fmt(c.raw) + '만원' } }
+      }
+    }
+  });
+
+  const barsCtx = document.getElementById('bars');
+  barsChart = new Chart(barsCtx, {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: '누적 자산', data: [], backgroundColor: '#3b82f6', borderRadius: 5, maxBarThickness: 40 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { color: '#6b7395', callback: (v) => fmt(v) }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#6b7395' }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => fmt(c.raw) + '만원' } }
+      },
+      onHover: (evt, elements) => {
+        evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+      },
+      onClick: (evt, elements) => {
+        if(!elements.length) return;
+        const idx = elements[0].index;
+        const entry = months[idx];
+        if(entry) openSnapshotModal(entry);
+      }
+    }
+  });
+}
+
+let editingAssetIndex = null; // 현재 금액을 인라인 수정 중인 자산의 인덱스 (없으면 null)
+
+function renderAssets(){
+  const total = assets.reduce((s,a) => s + a.value, 0) || 1;
+  const totalDisplay = assets.length ? fmt(total) + ' 만원' : '0 만원';
+
+  const list = document.getElementById('a-list');
+  list.innerHTML = '';
+  assets.forEach((a, i) => {
+    const pct = (a.value / total * 100).toFixed(1);
+    const row = document.createElement('div');
+    row.className = 'list-row';
+    row.style.flexWrap = 'wrap';
+    let detail = '';
+    if(a.detail){
+      detail = '<div style="width:100%; font-size:11.5px; color:var(--text-3); margin:-4px 0 2px 20px;">' + escapeHtml(a.detail) + '</div>';
+    }
+
+    const isEditing = (i === editingAssetIndex);
+    // 금액 부분: 평소엔 눌러서 바로 금액만 고칠 수 있는 버튼, 수정 중엔 입력창 + 저장/취소로 전환
+    const amtHtml = isEditing
+      ? '<input type="number" class="amt-edit-input" data-i="' + i + '" value="' + a.value + '" style="width:100px;">' +
+        '<button class="amt-save" data-i="' + i + '" aria-label="금액 저장" style="padding:6px 10px; min-height:0;">✓</button>' +
+        '<button class="amt-cancel" data-i="' + i + '" aria-label="수정 취소" style="padding:6px 10px; min-height:0;">✕</button>'
+      : '<button class="amt amt-edit" data-i="' + i + '" type="button" title="눌러서 금액만 수정" ' +
+        'style="background:transparent; border:none; padding:0; min-height:0; height:auto; line-height:1.4; color:var(--text-1); font-size:inherit; font-family:inherit; font-weight:600; font-variant-numeric:tabular-nums; cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px;">' +
+        fmt(a.value) + '만원</button>';
+
+    row.innerHTML =
+      '<span class="dot" style="background:' + COLORS[i % COLORS.length] + '"></span>' +
+      '<span class="name">' + escapeHtml(a.name) + '</span>' +
+      amtHtml +
+      (isEditing ? '' : '<span class="pct">' + pct + '%</span>') +
+      '<button class="del" data-i="' + i + '" aria-label="삭제">✕</button>' +
+      detail;
+    list.appendChild(row);
+  });
+  document.getElementById('a-total').textContent = totalDisplay;
+
+  donutChart.data.labels = assets.map(a => a.name);
+  donutChart.data.datasets[0].data = assets.map(a => a.value);
+  donutChart.data.datasets[0].backgroundColor = assets.map((_,i) => COLORS[i % COLORS.length]);
+  donutChart.update();
+
+  const legend = document.getElementById('donut-legend');
+  legend.innerHTML = assets.map((a,i) =>
+    '<div class="item"><span class="dot" style="background:' + COLORS[i % COLORS.length] + '"></span>' +
+    '<span class="name">' + escapeHtml(a.name) + '</span>' +
+    '<span class="val">' + (a.value/total*100).toFixed(1) + '%</span></div>'
+  ).join('') || '<div style="color:var(--text-3);font-size:13px;">항목을 추가해 보세요</div>';
+
+  // 금액 버튼을 누르면 그 항목만 인라인 입력창으로 전환
+  list.querySelectorAll('.amt-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      editingAssetIndex = +btn.dataset.i;
+      renderAssets();
+      const input = list.querySelector('.amt-edit-input[data-i="' + editingAssetIndex + '"]');
+      if(input){ input.focus(); input.select(); }
+    });
+  });
+
+  list.querySelectorAll('.amt-save').forEach(btn => {
+    btn.addEventListener('click', () => commitAssetValueEdit(+btn.dataset.i));
+  });
+  list.querySelectorAll('.amt-cancel').forEach(btn => {
+    btn.addEventListener('click', () => { editingAssetIndex = null; renderAssets(); });
+  });
+  list.querySelectorAll('.amt-edit-input').forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter'){ e.preventDefault(); commitAssetValueEdit(+input.dataset.i); }
+      else if(e.key === 'Escape'){ editingAssetIndex = null; renderAssets(); }
+    });
+  });
+
+  list.querySelectorAll('.del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = +btn.dataset.i;
+      const removed = assets[i];
+      assets.splice(i, 1);
+      editingAssetIndex = null; // 삭제로 인덱스가 밀리면 수정 중이던 위치가 어긋날 수 있어 초기화
+      renderAssets();
+      const ok = saveData();
+      const msg = ok
+        ? '"' + removed.name + '" 항목을 삭제했어요.'
+        : '"' + removed.name + '" 삭제는 됐지만 저장 공간 부족으로 기기에 저장되지 않았어요.';
+      showToast(msg, () => {
+        assets.splice(i, 0, removed);
+        renderAssets();
+        saveData();
+      });
+    });
+  });
+  syncCurrentMonthFromAssets();
+  renderMonths();
+}
+
+// 항목명은 그대로 두고 금액만 바꿔서 저장. 원래 USD/금처럼 수량×환율로 계산된 항목이었다면
+// 사용자가 금액을 직접 덮어썼으므로 예전 "수량×환율" 설명 문구는 더 이상 정확하지 않아 함께 지움
+function commitAssetValueEdit(i){
+  const input = document.querySelector('.amt-edit-input[data-i="' + i + '"]');
+  if(!input) return;
+  const newValue = parseFloat(input.value);
+  if(isNaN(newValue) || newValue <= 0){
+    input.style.borderColor = 'var(--danger)';
+    input.focus();
+    return;
+  }
+  assets[i].value = newValue;
+  if(assets[i].detail) delete assets[i].detail;
+  editingAssetIndex = null;
+  renderAssets();
+  const ok = saveData();
+  if(!ok) showToast('저장 공간이 부족해 방금 수정한 금액이 기기에 저장되지 않았어요.');
+}
+
+function renderMonths(){
+  sortMonths();
+  barsChart.data.labels = months.map(m => monthAxisLabel(m.year, m.month));
+  barsChart.data.datasets[0].data = months.map(m => m.value);
+
+  // 데이터가 많아져도 스크롤 없이 항상 카드 너비 안에 모든 막대가 들어오도록,
+  // 막대 폭을 고정하지 않고 컨테이너 너비에 맞춰 자동으로 줄어들게 함
+  const innerWrap = document.getElementById('bars-inner');
+  if(innerWrap) innerWrap.style.width = '100%';
+  barsChart.resize();
+  barsChart.update();
+
+  const rateEl = document.getElementById('return-rate');
+  if(months.length >= 2){
+    const prev = months[months.length - 2].value;
+    const curr = months[months.length - 1].value;
+    if(prev > 0){
+      const rate = ((curr - prev) / prev * 100);
+      const diff = curr - prev;
+      const diffSign = diff >= 0 ? '+' : '';
+      rateEl.textContent = '전월대비 자산증가율 ' + (rate >= 0 ? '+' : '') + rate.toFixed(2) + '% (' + diffSign + fmt(diff) + '만원)';
+      rateEl.className = 'delta ' + (rate >= 0 ? 'up' : 'down');
+    } else {
+      rateEl.textContent = '전월대비 자산증가율 계산 불가';
+      rateEl.className = 'delta';
+    }
+  } else {
+    rateEl.textContent = '월별 데이터를 2개 이상 입력하세요';
+    rateEl.className = 'delta';
+  }
+
+  updateCagr();
+  updateTotalHero();
+}
+
+// 연평균 자산증가율 계산: 가장 이른 달과 가장 늦은 달 사이의 실제 경과 기간(년)을 구해서
+// (마지막값/첫값)^(1/년) - 1 로 연 단위 복리 증가율을 표시.
+// 주의: 이 값은 "투자 수익률"이 아니라 "총자산이 늘어난 속도"를 의미함.
+// 중간에 새로 입금하거나 출금한 금액도 그대로 섞여서 계산되므로, 순수한 투자 성과와는 다를 수 있음.
+// 기간이 1개월 미만이거나
+// 첫 값이 0 이하면 계산할 수 없음을 안내.
+function updateCagr(){
+  const valueEl = document.getElementById('cagr-value');
+  const periodEl = document.getElementById('cagr-period');
+  if(!valueEl || !periodEl) return;
+
+  if(months.length < 2){
+    valueEl.textContent = '데이터 부족';
+    valueEl.className = 'cagr-value';
+    periodEl.textContent = '월별 데이터를 2개 이상 입력하면 계산돼요';
+    return;
+  }
+
+  const first = months[0];
+  const last = months[months.length - 1];
+  const monthSpan = (last.year - first.year) * 12 + (last.month - first.month);
+
+  if(monthSpan < 1){
+    valueEl.textContent = '기간 부족';
+    valueEl.className = 'cagr-value';
+    periodEl.textContent = '최소 1개월 이상 차이 나는 데이터가 필요해요';
+    return;
+  }
+  if(first.value <= 0){
+    valueEl.textContent = '계산 불가';
+    valueEl.className = 'cagr-value';
+    periodEl.textContent = '시작 시점 자산이 0원 이하라 계산할 수 없어요';
+    return;
+  }
+
+  const years = monthSpan / 12;
+  const cagr = (Math.pow(last.value / first.value, 1 / years) - 1) * 100;
+  const sign = cagr >= 0 ? '+' : '';
+  valueEl.textContent = sign + cagr.toFixed(2) + '%';
+  valueEl.className = 'cagr-value ' + (cagr >= 0 ? 'up' : 'down');
+
+  const wholeYears = Math.floor(monthSpan / 12);
+  const remMonths = monthSpan % 12;
+  let totalPeriodText;
+  if(wholeYears > 0 && remMonths > 0) totalPeriodText = wholeYears + '년 ' + remMonths + '개월';
+  else if(wholeYears > 0) totalPeriodText = wholeYears + '년';
+  else totalPeriodText = remMonths + '개월';
+
+  const periodText = monthAxisLabel(first.year, first.month) + ' ~ ' + monthAxisLabel(last.year, last.month)
+    + ' · 총 ' + totalPeriodText + ' (연 환산 ' + years.toFixed(1) + '년)';
+  periodEl.textContent = years < 1
+    ? periodText + ' · 1년 미만 데이터라 참고용이에요'
+    : periodText;
+
+  updateYearlyBreakdown();
+}
+
+// 연도별 자산증가율: 각 연도의 "마지막 입력값"을 그 해의 연말 스냅샷으로 보고,
+// 직전 연도의 마지막 입력값과 비교해서 전년 대비 증가율(%)을 계산.
+// 데이터에 있는 첫 번째 연도는 비교할 "전년도"가 없으므로 증가율 대신 기준값만 표시.
+// 같은 해 안에 값이 하나뿐이면(그 해 첫 데이터=마지막 데이터) 그 값 그대로 사용.
+function updateYearlyBreakdown(){
+  const box = document.getElementById('cagr-yearly-box');
+  const listEl = document.getElementById('cagr-yearly-list');
+  if(!box || !listEl) return;
+
+  if(months.length < 2){
+    box.style.display = 'none';
+    listEl.innerHTML = '';
+    return;
+  }
+
+  // 연도별 "그 해 마지막 데이터"만 추출
+  const lastByYear = new Map();
+  for(const mo of months){
+    lastByYear.set(mo.year, mo); // months가 시간순 정렬이므로 계속 덮어쓰면 마지막 값이 남음
+  }
+  const years = Array.from(lastByYear.keys()).sort((a, b) => a - b);
+
+  if(years.length < 2){
+    // 한 해 안의 데이터만 있으면 연도별 비교 자체가 의미 없음
+    box.style.display = 'none';
+    listEl.innerHTML = '';
+    return;
+  }
+
+  let rowsHtml = '';
+  for(let i = 0; i < years.length; i++){
+    const y = years[i];
+    const curr = lastByYear.get(y);
+    if(i === 0){
+      rowsHtml += '<div class="cagr-yearly-row">'
+        + '<span class="yr">' + y + '년<span class="yr-note">(기준연도)</span></span>'
+        + '<div class="yr-right"><span class="yr-rate flat">' + fmt(curr.value) + '만원</span></div>'
+        + '</div>';
+      continue;
+    }
+    const prevYear = years[i - 1];
+    const prev = lastByYear.get(prevYear);
+    const yearGap = y - prevYear;
+    const diff = curr.value - prev.value;
+    const diffSign = diff >= 0 ? '+' : '';
+    const diffCls = diff > 0 ? 'up' : (diff < 0 ? 'down' : '');
+    const amtHtml = '<span class="yr-amt ' + diffCls + '">(' + diffSign + fmt(diff) + '만원)</span>';
+    let rateHtml;
+    if(prev.value > 0){
+      const rate = (curr.value / prev.value - 1) * 100;
+      const sign = rate >= 0 ? '+' : '';
+      const cls = rate > 0 ? 'up' : (rate < 0 ? 'down' : 'flat');
+      rateHtml = '<span class="yr-rate ' + cls + '">' + sign + rate.toFixed(2) + '%</span>';
+    } else {
+      rateHtml = '<span class="yr-rate flat">계산 불가</span>';
+    }
+    // 중간 연도가 비어있으면(예: 2020→2022) 실제로는 2년치 증가분이 한 해처럼 표시될 수 있으므로 안내를 붙임
+    const gapNote = yearGap > 1
+      ? '<span class="yr-note">(' + prevYear + '년 대비, ' + yearGap + '년간 누적)</span>'
+      : '';
+    // 그 해 마지막 데이터가 12월이 아니면(현재 진행 중인 해 등) 참고용임을 표시
+    const partialNote = (curr.month < 12 && i === years.length - 1)
+      ? '<span class="yr-note">(' + curr.month + '월까지)</span>'
+      : '';
+    rowsHtml += '<div class="cagr-yearly-row">'
+      + '<span class="yr">' + y + '년' + gapNote + partialNote + '</span>'
+      + '<div class="yr-right">' + rateHtml + amtHtml + '</div>'
+      + '</div>';
+  }
+
+  listEl.innerHTML = rowsHtml;
+  box.style.display = 'block';
+}
+
+function syncCurrentMonthFromAssets(){
+  if(!assets.length) return; // 자산 항목이 없으면 임의로 이번 달 값을 0으로 덮어쓰지 않음
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth() + 1;
+  const total = assets.reduce((s,a) => s + a.value, 0);
+  const snapshot = JSON.parse(JSON.stringify(assets));
+  const existing = months.find(mo => mo.year === y && mo.month === m);
+  if(existing){
+    existing.value = total;
+    existing.snapshot = snapshot;
+  } else {
+    months.push({ year: y, month: m, value: total, snapshot });
+  }
+  sortMonths();
+}
+
+function updateTotalHero(){
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth() + 1;
+  const current = months.find(mo => mo.year === y && mo.month === m);
+  const heroEl = document.getElementById('total-value');
+  const labelEl = document.getElementById('total-source-label');
+  if(current){
+    heroEl.textContent = fmt(current.value) + ' 만원';
+    labelEl.textContent = '이번 달(' + y + '년 ' + m + '월) 자산 현황 기준';
+  } else {
+    const total = assets.reduce((s,a) => s + a.value, 0);
+    heroEl.textContent = fmt(total) + ' 만원';
+    labelEl.textContent = '이번 달 데이터 없음 · 자산 항목 합계로 표시 중';
+  }
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+const typeFields = {
+  krw: document.getElementById('a-fields-krw'),
+  usd: document.getElementById('a-fields-usd'),
+  gold: document.getElementById('a-fields-gold')
+};
+document.getElementById('a-type').addEventListener('change', (e) => {
+  Object.keys(typeFields).forEach(k => typeFields[k].style.display = (k === e.target.value) ? 'block' : 'none');
+  document.getElementById('a-fetch-status').textContent = '';
+  // 달러/금을 선택하면 값이 비어있는 경우에 한해 오늘 기준 환율·시세를 자동으로 조회해 채워줌
+  if(e.target.value === 'usd' && !document.getElementById('a-usd-rate').value){
+    fetchUsdKrwRate();
+  } else if(e.target.value === 'gold' && !document.getElementById('a-gold-rate').value){
+    fetchGoldRate();
+  }
+});
+
+// 짧은 시간 안에 반복 조회하지 않도록 환율/금시세를 잠깐 메모리에 캐시해 둠 (새로고침 전까지만 유지)
+const RATE_CACHE_TTL_MS = 5 * 60 * 1000; // 5분
+let usdRateCache = null; // { rate, time }
+let goldRateCache = null; // { rate, time }
+
+async function fetchUsdKrwRate(){
+  const status = document.getElementById('a-fetch-status');
+  const now = Date.now();
+  if(usdRateCache && (now - usdRateCache.time) < RATE_CACHE_TTL_MS){
+    document.getElementById('a-usd-rate').value = usdRateCache.rate;
+    status.textContent = '오늘 환율로 자동 입력됨 (직접 수정 가능)';
+    return;
+  }
+  status.textContent = '오늘 환율 조회 중...';
+  try{
+    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    const data = await res.json();
+    const rate = data && data.rates && data.rates.KRW;
+    if(!rate) throw new Error('no rate');
+    const rounded = Math.round(rate);
+    usdRateCache = { rate: rounded, time: now };
+    document.getElementById('a-usd-rate').value = rounded;
+    status.textContent = '오늘 환율로 자동 입력됨 (직접 수정 가능)';
+  }catch(e){
+    status.textContent = '환율 자동 조회 실패. 직접 입력해 주세요.';
+  }
+}
+
+async function fetchGoldRate(){
+  const status = document.getElementById('a-fetch-status');
+  const now = Date.now();
+  if(goldRateCache && (now - goldRateCache.time) < RATE_CACHE_TTL_MS){
+    document.getElementById('a-gold-rate').value = goldRateCache.rate;
+    status.textContent = '오늘 시세로 자동 입력됨 (국제 시세 기준, 직접 수정 가능)';
+    return;
+  }
+  status.textContent = '오늘 금 시세 조회 중...';
+
+  // 1차: 브라우저(앱)에서 직접 호출 가능하도록 CORS가 열려있는 금시세 API (원화·그램 단위로 바로 반환)
+  try{
+    const res = await fetch('https://xaus.com/api/v1/spot?currency=KRW&unit=gram');
+    if(!res.ok) throw new Error('bad response status: ' + res.status);
+    const data = await res.json();
+    const krwPerGram = data && data.xau && data.xau.price;
+    if(!krwPerGram) throw new Error('no price field in response');
+    const rounded = Math.round(krwPerGram);
+    goldRateCache = { rate: rounded, time: now };
+    document.getElementById('a-gold-rate').value = rounded;
+    status.textContent = '오늘 시세로 자동 입력됨 (국제 시세 기준, 국내 소매가와 다를 수 있어요)';
+    return;
+  }catch(e){
+    console.error('금 시세 1차 조회 실패, 예비 방식으로 재시도:', e);
+  }
+
+  // 2차(예비): 1차가 실패했을 때만 시도하는 예비 경로
+  try{
+    const [goldRes, fxRes] = await Promise.all([
+      fetch('https://data-asg.goldprice.org/dbXRates/USD'),
+      fetch('https://open.er-api.com/v6/latest/USD')
+    ]);
+    const goldData = await goldRes.json();
+    const fxData = await fxRes.json();
+    const usdPerOz = goldData && goldData.items && goldData.items[0] && goldData.items[0].xauPrice;
+    const usdKrw = fxData && fxData.rates && fxData.rates.KRW;
+    if(!usdPerOz || !usdKrw) throw new Error('no data');
+    const krwPerGram = Math.round((usdPerOz / 31.1034768) * usdKrw);
+    goldRateCache = { rate: krwPerGram, time: now };
+    document.getElementById('a-gold-rate').value = krwPerGram;
+    status.textContent = '오늘 시세로 자동 입력됨 (국제 시세 기준, 국내 소매가와 다를 수 있어요)';
+  }catch(e){
+    console.error('금 시세 2차 조회도 실패:', e);
+    status.textContent = '금 시세 자동 조회 실패. 직접 입력해 주세요.';
+  }
+}
+
+document.getElementById('a-usd-fetch').addEventListener('click', () => { usdRateCache = null; fetchUsdKrwRate(); });
+document.getElementById('a-gold-fetch').addEventListener('click', () => { goldRateCache = null; fetchGoldRate(); });
+
+document.getElementById('a-add').addEventListener('click', () => {
+  const nameEl = document.getElementById('a-name');
+  const typeEl = document.getElementById('a-type');
+  const err = document.getElementById('a-error');
+  const name = nameEl.value.trim();
+  const type = typeEl.value;
+
+  if(!name){
+    err.textContent = '항목명을 입력하세요.';
+    err.style.display = 'block';
+    return;
+  }
+
+  let value, detail;
+
+  if(type === 'krw'){
+    const valEl = document.getElementById('a-value');
+    value = parseFloat(valEl.value);
+    if(isNaN(value) || value <= 0){
+      err.textContent = '0보다 큰 금액을 입력하세요.';
+      err.style.display = 'block';
+      return;
+    }
+    valEl.value = '';
+  } else if(type === 'usd'){
+    const qtyEl = document.getElementById('a-usd-qty');
+    const rateEl = document.getElementById('a-usd-rate');
+    const qty = parseFloat(qtyEl.value);
+    const rate = parseFloat(rateEl.value);
+    if(isNaN(qty) || qty <= 0 || isNaN(rate) || rate <= 0){
+      err.textContent = '수량(USD)과 환율을 모두 입력하세요.';
+      err.style.display = 'block';
+      return;
+    }
+    value = (qty * rate) / 10000;
+    detail = fmt(qty) + ' USD × ' + fmt(rate) + '원/USD';
+    qtyEl.value = ''; rateEl.value = '';
+  } else if(type === 'gold'){
+    const qtyEl = document.getElementById('a-gold-qty');
+    const rateEl = document.getElementById('a-gold-rate');
+    const qty = parseFloat(qtyEl.value);
+    const rate = parseFloat(rateEl.value);
+    if(isNaN(qty) || qty <= 0 || isNaN(rate) || rate <= 0){
+      err.textContent = '무게(g)와 시세를 모두 입력하세요.';
+      err.style.display = 'block';
+      return;
+    }
+    value = (qty * rate) / 10000;
+    detail = fmt(qty) + 'g × ' + fmt(rate) + '원/g';
+    qtyEl.value = ''; rateEl.value = '';
+  }
+
+  err.style.display = 'none';
+  document.getElementById('a-fetch-status').textContent = '';
+  const entry = { name, value };
+  if(detail) entry.detail = detail;
+  assets.push(entry);
+  nameEl.value = '';
+  renderAssets();
+  const ok = saveData();
+  if(!ok) showToast('저장 공간이 부족해 방금 추가한 항목이 기기에 저장되지 않았어요.');
+});
+
+function populateMonthSelects(){
+  const yearSel = document.getElementById('m-year');
+  const monthSel = document.getElementById('m-month');
+  const now = new Date();
+  const curYear = now.getFullYear();
+  yearSel.innerHTML = '';
+  for(let y = curYear + 1; y >= 2000; y--){
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y + '년';
+    if(y === curYear) opt.selected = true;
+    yearSel.appendChild(opt);
+  }
+  monthSel.innerHTML = '';
+  for(let m = 1; m <= 12; m++){
+    const opt = document.createElement('option');
+    opt.value = m; opt.textContent = m + '월';
+    if(m === now.getMonth() + 1) opt.selected = true;
+    monthSel.appendChild(opt);
+  }
+}
+
+document.getElementById('m-today').addEventListener('click', () => {
+  const now = new Date();
+  document.getElementById('m-year').value = now.getFullYear();
+  document.getElementById('m-month').value = now.getMonth() + 1;
+  document.getElementById('m-value').focus();
+});
+
+document.getElementById('m-add').addEventListener('click', () => {
+  const year = parseInt(document.getElementById('m-year').value, 10);
+  const month = parseInt(document.getElementById('m-month').value, 10);
+  const valEl = document.getElementById('m-value');
+  const err = document.getElementById('m-error');
+  const value = parseFloat(valEl.value);
+  if(isNaN(value) || value < 0){
+    err.textContent = '0 이상의 금액을 입력하세요.';
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  // 이번 달 값을 저장할 때만 "자산 항목 입력"의 현재 구성을 스냅샷으로 함께 기록함.
+  // 과거/미래 달을 저장할 때는 오늘의 자산 구성이 그 시점의 실제 구성이 아니므로
+  // 기존에 저장돼 있던 스냅샷을 그대로 두고, 새로 만드는 과거 달은 스냅샷 없이 값만 기록함.
+  const now = new Date();
+  const isCurrentMonth = (year === now.getFullYear() && month === (now.getMonth() + 1));
+  const existing = months.find(m => m.year === year && m.month === month);
+  if(existing){
+    existing.value = value;
+    if(isCurrentMonth && assets.length){
+      existing.snapshot = JSON.parse(JSON.stringify(assets));
+    }
+  } else {
+    const snapshot = (isCurrentMonth && assets.length) ? JSON.parse(JSON.stringify(assets)) : null;
+    months.push({ year, month, value, snapshot });
+  }
+  valEl.value = '';
+  renderMonths();
+  const ok = saveData();
+  if(!ok) showToast('저장 공간이 부족해 방금 입력한 값이 기기에 저장되지 않았어요.');
+});
+
+document.getElementById('m-reset').addEventListener('click', () => {
+  if(confirm('월별 자산 현황 데이터를 모두 지울까요? (개별 달만 잘못 입력했다면 막대를 눌러 그 달만 수정·삭제할 수 있어요)')){
+    const backup = months;
+    months = [];
+    renderMonths();
+    const ok = saveData();
+    showToast(ok ? '월별 데이터를 모두 지웠어요.' : '지우긴 했지만 저장 공간 부족으로 기기에 반영되지 않았어요.', () => {
+      months = backup;
+      renderMonths();
+      saveData();
+    });
+  }
+});
+
+// 짧은 시간 안에 되돌릴 수 있는 토스트 알림 (자산/월별 데이터 삭제 시 실수 방지용)
+let toastTimer = null;
+function showToast(message, undoFn){
+  const toast = document.getElementById('toast');
+  const msgEl = document.getElementById('toast-msg');
+  const undoBtn = document.getElementById('toast-undo');
+  msgEl.textContent = message;
+
+  // 이전에 등록된 실행취소 클릭 리스너를 제거하기 위해 버튼을 새로 교체
+  const freshBtn = undoBtn.cloneNode(true);
+  freshBtn.style.display = undoFn ? 'inline-block' : 'none';
+  undoBtn.parentNode.replaceChild(freshBtn, undoBtn);
+  if(undoFn){
+    freshBtn.addEventListener('click', () => {
+      clearTimeout(toastTimer);
+      toast.classList.remove('show');
+      undoFn();
+    });
+  }
+
+  toast.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 5000);
+}
+
+['a-name','a-value'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') document.getElementById('a-add').click();
+  });
+});
+['m-value'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') document.getElementById('m-add').click();
+  });
+});
+
+populateMonthSelects();
+loadData();
+initCharts();
+applyChartTheme(); // 저장된 테마가 라이트일 경우 방금 생성된 차트에도 반영
+renderAssets(); // 내부에서 이번 달 데이터 동기화 + renderMonths() 까지 처리됨
+
+// 앱을 계속 켜둔 채로 자정(월이 바뀌는 시점)을 넘기거나, 백그라운드에 있다가
+// 다시 돌아왔을 때도(자산 항목을 건드리지 않아도) 자동으로 "새 달" 데이터를
+// 그대로 채워 넣기 위한 감지 로직.
+let lastCheckedYM = (() => { const n = new Date(); return n.getFullYear() + '-' + (n.getMonth()+1); })();
+
+function checkForMonthChange(){
+  const now = new Date();
+  const ym = now.getFullYear() + '-' + (now.getMonth()+1);
+  if(ym !== lastCheckedYM){
+    lastCheckedYM = ym;
+    renderAssets(); // 자산 항목이 그대로여도 새 달 기준으로 다시 동기화됨
+  }
+}
+
+// 앱이 다시 화면에 보일 때(백그라운드→포그라운드 전환) 즉시 확인
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden) checkForMonthChange();
+});
+// 앱을 계속 켜놓고 있는 경우를 위한 보조 확인(1분마다)
+setInterval(checkForMonthChange, 60000);
+
+function detectPlatform(){
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+  const isAndroid = /Android/.test(ua);
+  const isChrome = /Chrome/.test(ua) && !/Edg|OPR/.test(ua);
+  if(isIOS) return 'ios';
+  if(isAndroid && isChrome) return 'android-chrome';
+  if(isAndroid) return 'android-other';
+  return 'desktop';
+}
+
+const stepsByPlatform = {
+  'ios': {
+    title: 'iOS(사파리)에서 홈 화면에 추가하기',
+    sub: 'iPhone 또는 iPad의 사파리 브라우저에서 진행해 주세요',
+    steps: [
+      '화면 하단(또는 상단)의 <b>공유 버튼</b> □↑ 을 탭하세요.',
+      '메뉴를 아래로 스크롤해서 <b>"홈 화면에 추가"</b>를 탭하세요.',
+      '이름을 확인하고 오른쪽 위 <b>"추가"</b>를 탭하면 완료돼요.'
+    ]
+  },
+  'android-chrome': {
+    title: '안드로이드(크롬)에서 홈 화면에 추가하기',
+    sub: '크롬 브라우저에서 진행해 주세요',
+    steps: [
+      '오른쪽 위 <b>점 3개(메뉴)</b> 아이콘을 탭하세요.',
+      '<b>"홈 화면에 추가"</b> 또는 <b>"앱 설치"</b>를 탭하세요.',
+      '팝업에서 <b>"추가"</b>를 탭하면 완료돼요.'
+    ]
+  },
+  'android-other': {
+    title: '홈 화면에 추가하기',
+    sub: '기기 브라우저 메뉴에서 진행해 주세요',
+    steps: [
+      '브라우저 메뉴(≡ 또는 점 3개)를 여세요.',
+      '<b>"홈 화면에 추가"</b> 항목을 찾아 탭하세요.',
+      '없다면 크롬 브라우저로 이 페이지를 열어서 시도해 보세요.'
+    ]
+  },
+  'desktop': {
+    title: '데스크톱에서 사용하기',
+    sub: '홈 화면 추가는 모바일 기능이에요',
+    steps: [
+      '이 기능은 스마트폰/태블릿 브라우저에서만 지원돼요.',
+      '이 파일을 스마트폰으로 옮기거나, 링크로 접속한 뒤 다시 시도해 주세요.',
+      '데스크톱에서는 즐겨찾기(Ctrl/Cmd+D)로 저장해 두시면 편해요.'
+    ]
+  }
+};
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+
+// 이미 설치된 앱(APK) 안에서는 "홈 화면에 추가" 기능 자체가 필요 없으므로 버튼을 숨김
+if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
+  const addHomeBtn = document.getElementById('add-home-open');
+  if(addHomeBtn) addHomeBtn.style.display = 'none';
+}
+
+document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+  theme = (theme === 'light') ? 'dark' : 'light';
+  applyTheme();
+  saveData();
+});
+
+document.getElementById('title-edit-btn').addEventListener('click', () => {
+  const input = prompt('대시보드 이름을 입력하세요', appName);
+  if(input === null) return; // 취소
+  const trimmed = input.trim();
+  appName = trimmed ? trimmed.slice(0, 30) : DEFAULT_APP_NAME;
+  applyAppName();
+  saveData();
+});
+
+// ---- 앱(APK) 환경에서 파일 저장/공유 처리 ----
+// 웹 브라우저의 <a download> 방식은 안드로이드 앱(WebView) 안에서는 동작하지 않으므로,
+// Capacitor Filesystem/Share 플러그인이 있으면 그걸로 저장하고, 없으면(PC 브라우저) 기존 방식을 사용함.
+function blobToBase64(blob){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result).split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function saveOrShareBlob(blob, filename){
+  const isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+  const plugins = window.Capacitor && window.Capacitor.Plugins;
+
+  if(isNative && plugins && plugins.Filesystem){
+    const base64Data = await blobToBase64(blob);
+    const result = await plugins.Filesystem.writeFile({
+      path: filename,
+      data: base64Data,
+      directory: 'CACHE'
+    });
+    if(plugins.Share){
+      try{
+        await plugins.Share.share({
+          title: filename,
+          url: result.uri,
+          dialogTitle: '저장 또는 공유하기'
+        });
+      }catch(shareErr){
+        // 사용자가 공유창에서 뒤로가기/취소를 누른 경우로, 정상적인 취소이므로 에러로 취급하지 않음
+      }
+    } else {
+      alert('파일이 생성되었지만 공유 기능을 사용할 수 없어요. (@capacitor/share 설치 필요)');
+    }
+    return;
+  }
+
+  // PC 브라우저 등 일반 웹 환경 (기존 방식)
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+// 공유하기 화면 등 다른 화면을 갔다가 앱으로 돌아왔을 때,
+// 안드로이드 웹뷰가 화면을 다시 안 그려서 버튼들이 안 보이는 문제를 방지하기 위한 강제 새로고침 처리.
+function forceRepaint(){
+  document.body.style.display = 'none';
+  void document.body.offsetHeight; // 강제로 레이아웃을 다시 계산시킴
+  document.body.style.display = '';
+}
+
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden) forceRepaint();
+});
+window.addEventListener('focus', forceRepaint);
+window.addEventListener('pageshow', forceRepaint);
+
+// 안드로이드 앱(Capacitor) 자체의 "앱이 다시 화면에 나타났다" 신호를 직접 사용 (가장 확실한 방법)
+if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App){
+  window.Capacitor.Plugins.App.addListener('resume', () => {
+    setTimeout(forceRepaint, 50);
+  });
+}
+
+// 안드로이드 뒤로가기 버튼: 열린 팝업(모달)이 있으면 앱 종료 대신 팝업만 닫음
+if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App){
+  window.Capacitor.Plugins.App.addListener('backButton', () => {
+    const openOverlays = document.querySelectorAll('.modal-overlay.open');
+    if(openOverlays.length > 0){
+      openOverlays.forEach(el => el.classList.remove('open'));
+      return;
+    }
+    // 열린 팝업이 없는 메인 화면에서는 앱을 완전히 끄지 않고 백그라운드로 내려보냄
+    if(typeof window.Capacitor.Plugins.App.minimizeApp === 'function'){
+      window.Capacitor.Plugins.App.minimizeApp();
+    } else {
+      window.Capacitor.Plugins.App.exitApp();
+    }
+  });
+}
+
+document.getElementById('save-image-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('save-image-btn');
+  const originalText = btn.textContent;
+  const headerActions = document.querySelector('.header-actions');
+  const bottomActions = document.getElementById('bottom-actions');
+  const prevHeaderDisplay = headerActions.style.display;
+  const prevBottomDisplay = bottomActions.style.display;
+
+  btn.disabled = true;
+  btn.textContent = '이미지 생성 중...';
+  headerActions.style.display = 'none'; // 캡처 화면에서 버튼들은 제외하고 데이터만 담기
+  bottomActions.style.display = 'none';
+
+  try{
+    const target = document.querySelector('.wrap');
+    const canvas = await html2canvas(target, {
+      backgroundColor: cssVar('--bg-0'),
+      scale: Math.min(window.devicePixelRatio || 1, 2) + 0.5,
+      useCORS: true
+    });
+
+    await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if(!blob){ resolve(); return; }
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const filename = y + '-' + m + '-' + d + '.png';
+
+        saveOrShareBlob(blob, filename).then(resolve).catch(reject);
+      }, 'image/png');
+    });
+  }catch(e){
+    alert('이미지 생성에 실패했습니다. 다시 시도해 주세요.');
+  }finally{
+    headerActions.style.display = prevHeaderDisplay;
+    bottomActions.style.display = prevBottomDisplay;
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});
+
+document.getElementById('add-home-open').addEventListener('click', async () => {
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    return;
+  }
+  const platform = detectPlatform();
+  const data = stepsByPlatform[platform];
+  document.getElementById('modal-title').textContent = data.title;
+  document.getElementById('modal-sub').textContent = data.sub;
+  document.getElementById('modal-steps').innerHTML = data.steps.map((s, i) =>
+    '<div class="step"><span class="step-num">' + (i+1) + '</span><span class="step-text">' + s + '</span></div>'
+  ).join('');
+  document.getElementById('modal-overlay').classList.add('open');
+});
+
+document.getElementById('modal-close').addEventListener('click', () => {
+  document.getElementById('modal-overlay').classList.remove('open');
+});
+document.getElementById('modal-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'modal-overlay') document.getElementById('modal-overlay').classList.remove('open');
+});
+
+let snapshotChart = null;
+let currentSnapshotEntry = null;
+
+function openSnapshotModal(entry){
+  currentSnapshotEntry = entry;
+  const titleEl = document.getElementById('snapshot-title');
+  const subEl = document.getElementById('snapshot-sub');
+  const emptyEl = document.getElementById('snapshot-empty');
+  const bodyEl = document.getElementById('snapshot-body');
+  const listEl = document.getElementById('snapshot-list');
+
+  titleEl.textContent = monthLabel(entry.year, entry.month) + ' 포트폴리오';
+  subEl.textContent = entry.year + '년 ' + entry.month + '월 · 총 ' + fmt(entry.value) + '만원';
+
+  // 이동할 수 있는 다른 달 데이터가 있을 때만 스와이프 안내를 보여줌
+  const swipeHintEl = document.getElementById('snapshot-swipe-hint');
+  if(swipeHintEl) swipeHintEl.style.display = (months.length > 1) ? 'flex' : 'none';
+
+  // 이번 달은 "자산 항목 입력" 합계로 자동 계산되는 값이라 개별 수정/삭제가
+  // 곧바로 원래 합계로 되돌아가므로, 혼란을 막기 위해 버튼 대신 안내만 보여줌
+  const now = new Date();
+  const isCurrentMonth = (entry.year === now.getFullYear() && entry.month === (now.getMonth() + 1));
+  document.getElementById('snapshot-actions').style.display = isCurrentMonth ? 'none' : 'flex';
+  document.getElementById('snapshot-current-note').style.display = isCurrentMonth ? 'block' : 'none';
+
+  if(!entry.snapshot || !entry.snapshot.length){
+    emptyEl.style.display = 'block';
+    bodyEl.style.display = 'none';
+  } else {
+    emptyEl.style.display = 'none';
+    bodyEl.style.display = 'block';
+
+    const snap = entry.snapshot;
+    const total = snap.reduce((s,a) => s + a.value, 0) || 1;
+
+    if(snapshotChart) snapshotChart.destroy();
+    snapshotChart = new Chart(document.getElementById('snapshot-donut'), {
+      type: 'doughnut',
+      data: { labels: snap.map(a => a.name), datasets: [{ data: snap.map(a => a.value), backgroundColor: snap.map((_,i) => COLORS[i % COLORS.length]), borderColor: cssVar('--card'), borderWidth: 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.label + ': ' + fmt(c.raw) + '만원' } } } }
+    });
+
+    listEl.innerHTML = snap.map((a,i) => {
+      const pct = (a.value / total * 100).toFixed(1);
+      return '<div class="list-row"><span class="dot" style="background:' + COLORS[i % COLORS.length] + '"></span>' +
+        '<span class="name">' + escapeHtml(a.name) + '</span>' +
+        '<span class="amt">' + fmt(a.value) + '만원</span>' +
+        '<span class="pct">' + pct + '%</span></div>';
+    }).join('');
+  }
+
+  document.getElementById('snapshot-overlay').classList.add('open');
+}
+
+document.getElementById('snapshot-close').addEventListener('click', () => {
+  document.getElementById('snapshot-overlay').classList.remove('open');
+});
+document.getElementById('snapshot-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'snapshot-overlay') document.getElementById('snapshot-overlay').classList.remove('open');
+});
+
+// ---- 스냅샷 모달 좌우 스와이프: 오른쪽→왼쪽으로 스와이프 = 다음 달, 왼쪽→오른쪽으로 스와이프 = 이전 달 ----
+// months 배열은 항상 시간순(과거→현재)으로 정렬되어 있으므로, 인덱스를 -1/+1 이동하면 됨.
+(function(){
+  const modalEl = document.querySelector('#snapshot-overlay .modal');
+  if(!modalEl) return;
+
+  const SWIPE_THRESHOLD = 50; // 이 정도 이상 가로로 움직여야 스와이프로 인정
+  let startX = 0, startY = 0;
+  let tracking = false;
+  let horizontal = false;
+
+  function goToAdjacentMonth(direction){
+    // direction: -1 = 이전 달로, +1 = 다음 달로
+    if(!currentSnapshotEntry) return;
+    const idx = months.findIndex(m => m.year === currentSnapshotEntry.year && m.month === currentSnapshotEntry.month);
+    if(idx === -1) return;
+    const nextIdx = idx + direction;
+    if(nextIdx < 0 || nextIdx >= months.length) return; // 이미 맨 처음/맨 마지막 달
+    openSnapshotModal(months[nextIdx]);
+  }
+
+  modalEl.addEventListener('touchstart', (e) => {
+    if(e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+    horizontal = false;
+  }, { passive: true });
+
+  modalEl.addEventListener('touchmove', (e) => {
+    if(!tracking || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if(!horizontal && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.5){
+      horizontal = true; // 세로 스크롤이 아니라 가로 스와이프로 판단됨
+    }
+    if(horizontal) e.preventDefault(); // 목록 세로 스크롤과 충돌하지 않도록 가로 스와이프 중엔 기본 스크롤 막음
+  }, { passive: false });
+
+  modalEl.addEventListener('touchend', (e) => {
+    if(!tracking) return;
+    tracking = false;
+    if(!horizontal) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    if(dx <= -SWIPE_THRESHOLD){
+      goToAdjacentMonth(1); // 오른쪽에서 왼쪽으로 스와이프 → 다음 달
+    } else if(dx >= SWIPE_THRESHOLD){
+      goToAdjacentMonth(-1); // 왼쪽에서 오른쪽으로 스와이프 → 이전 달
+    }
+  });
+
+  modalEl.addEventListener('touchcancel', () => { tracking = false; horizontal = false; });
+})();
+
+// 특정 달의 값만 잘못 입력했을 때, 전체 초기화 없이 그 달만 고쳐 쓸 수 있도록
+// 저장 폼에 값을 채워주고 스크롤/포커스까지 이동시켜 줌
+document.getElementById('snapshot-edit').addEventListener('click', () => {
+  if(!currentSnapshotEntry) return;
+  const target = currentSnapshotEntry;
+  document.getElementById('snapshot-overlay').classList.remove('open');
+  document.getElementById('m-year').value = target.year;
+  document.getElementById('m-month').value = target.month;
+  const valEl = document.getElementById('m-value');
+  valEl.value = target.value;
+  const card = valEl.closest('.card');
+  if(card) card.scrollIntoView({ behavior:'smooth', block:'center' });
+  setTimeout(() => { valEl.focus(); valEl.select(); }, 250);
+});
+
+// 그 달 데이터만 개별 삭제 (전체 초기화 불필요) + 실수 방지용 되돌리기 토스트
+document.getElementById('snapshot-delete').addEventListener('click', () => {
+  if(!currentSnapshotEntry) return;
+  const target = currentSnapshotEntry;
+  const idx = months.findIndex(m => m.year === target.year && m.month === target.month);
+  if(idx === -1) return;
+  const removed = months[idx];
+  months.splice(idx, 1);
+  renderMonths();
+  const ok = saveData();
+  document.getElementById('snapshot-overlay').classList.remove('open');
+  const msg = ok
+    ? monthLabel(target.year, target.month) + ' 데이터를 삭제했어요.'
+    : monthLabel(target.year, target.month) + ' 삭제는 됐지만 저장 공간 부족으로 기기에 저장되지 않았어요.';
+  showToast(msg, () => {
+    months.push(removed);
+    renderMonths();
+    saveData();
+  });
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  });
+}
+
+// ---- 뒤로가기 두 번 눌러야 앱 종료 ----
+// 기본 상태로는 (특히 APK로 감쌌을 때) 뒤로가기 한 번에 바로 앱이 꺼져버림.
+// history에 더미 상태를 하나 쌓아두고, 뒤로가기를 누르면 그 더미 상태가 소비되면서 popstate가 발생함.
+//  1) 열려있는 모달이 있으면: 모달만 닫고 더미 상태를 즉시 다시 쌓아둠 (종료 카운트에 포함 안 함)
+//  2) 모달이 없는 상태에서 처음 뒤로가기: "한번 더 누르면 종료" 토스트만 띄우고, 더미 상태는 다시 쌓지 않음
+//     → 이 시점에 history가 바닥이라, 바로 다음 뒤로가기는 네이티브(안드로이드) 쪽에서 앱을 종료시킴 (총 2번)
+//  3) 안내가 뜬 지 2초가 지나도록 두 번째 뒤로가기가 없으면, 더미 상태를 다시 쌓아서
+//     다음번에도 똑같이 "2번 눌러야 종료"가 되도록 재무장함
+(function(){
+  const EXIT_WINDOW_MS = 2000;
+  let awaitingExitConfirm = false;
+  let exitTimer = null;
+
+  function pushGuardState(){
+    history.pushState({ appGuard: true }, '');
+  }
+  pushGuardState(); // 페이지 로드 시 더미 상태를 한 번 쌓아둠
+
+  function anyModalOpen(){
+    return ['modal-overlay', 'snapshot-overlay', 'bg-modal-overlay'].some(id => {
+      const el = document.getElementById(id);
+      return el && el.classList.contains('open');
+    });
+  }
+
+  function closeOpenModals(){
+    ['modal-overlay', 'snapshot-overlay', 'bg-modal-overlay'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.classList.remove('open');
+    });
+  }
+
+  window.addEventListener('popstate', () => {
+    if(anyModalOpen()){
+      closeOpenModals();
+      pushGuardState(); // 모달만 닫힌 것이므로 종료 카운트에는 포함시키지 않고 안전장치를 다시 걸어둠
+      return;
+    }
+
+    if(awaitingExitConfirm){
+      // 안내가 떠 있는 상태에서 다시 뒤로가기 → 더미 상태를 다시 쌓지 않음.
+      // 지금 history가 바닥이라, 바로 다음 뒤로가기(=지금 이 동작)로 갈 곳이 없어져
+      // 네이티브(안드로이드) 쪽에서 앱을 종료하게 됨 → 총 2번 만에 종료.
+      clearTimeout(exitTimer);
+      awaitingExitConfirm = false;
+      return;
+    }
+
+    // 첫 번째 뒤로가기: 아직 종료하지 않고 안내만 띄움
+    awaitingExitConfirm = true;
+    showToast('뒤로 가기를 한 번 더 누르면 앱이 종료돼요.');
+    exitTimer = setTimeout(() => {
+      // 시간 안에 두 번째 뒤로가기가 없었다면, 다시 안전장치를 걸어서
+      // 다음번에도 똑같이 2번 눌러야 종료되도록 재무장함.
+      awaitingExitConfirm = false;
+      pushGuardState();
+    }, EXIT_WINDOW_MS);
+  });
+})();
+
+// ---- 배경 이미지 설정 ----
+
+// 선택한 이미지 파일을 캔버스로 축소·압축해서 데이터 URL로 변환 (localStorage 용량 보호용)
+function resizeImageToDataUrl(file, maxDim, quality){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if(width > maxDim || height > maxDim){
+          if(width > height){ height = Math.round(height * maxDim / width); width = maxDim; }
+          else { width = Math.round(width * maxDim / height); height = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => reject(new Error('image load failed'));
+      img.src = reader.result;
+    };
+    reader.onerror = () => reject(new Error('file read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function refreshBgModalPreview(){
+  const wrap = document.getElementById('bg-preview-wrap');
+  if(bgImage){
+    document.getElementById('bg-preview').src = bgImage;
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+document.getElementById('bg-image-open').addEventListener('click', () => {
+  document.getElementById('bg-status').textContent = '';
+  refreshBgModalPreview();
+  document.getElementById('bg-modal-overlay').classList.add('open');
+});
+document.getElementById('bg-modal-close').addEventListener('click', () => {
+  document.getElementById('bg-modal-overlay').classList.remove('open');
+});
+document.getElementById('bg-modal-overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'bg-modal-overlay') document.getElementById('bg-modal-overlay').classList.remove('open');
+});
+
+document.getElementById('bg-file-input').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // 같은 파일을 다시 선택해도 change 이벤트가 발생하도록 초기화
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    document.getElementById('bg-status').textContent = '이미지 파일만 선택할 수 있어요.';
+    return;
+  }
+
+  const status = document.getElementById('bg-status');
+  status.textContent = '이미지 처리 중...';
+
+  // 저장이 실패하면(용량 초과) 아래 단계로 내려가며 더 작고 더 낮은 화질로 자동 재시도.
+  // 사용자는 신경 쓸 필요 없이 기기가 감당할 수 있는 최대 화질로 자동 최적화됨.
+  const attempts = [
+    { maxDim: 1280, quality: 0.82 },
+    { maxDim: 1280, quality: 0.6 },
+    { maxDim: 960,  quality: 0.6 },
+    { maxDim: 960,  quality: 0.45 },
+    { maxDim: 720,  quality: 0.45 },
+    { maxDim: 720,  quality: 0.3 },
+    { maxDim: 480,  quality: 0.3 }
+  ];
+
+  const previousBg = bgImage;
+  let lastDataUrl = null;
+  let savedOk = false;
+  let usedAttemptIndex = -1;
+
+  try{
+    for(let i = 0; i < attempts.length; i++){
+      const { maxDim, quality } = attempts[i];
+      const dataUrl = await resizeImageToDataUrl(file, maxDim, quality);
+      lastDataUrl = dataUrl;
+      bgImage = dataUrl;
+      if(saveData()){
+        savedOk = true;
+        usedAttemptIndex = i;
+        break;
+      }
+    }
+
+    if(!savedOk){
+      // 가장 낮은 화질로도 저장이 안 되면 원래 상태로 되돌림
+      bgImage = previousBg;
+      saveData();
+      status.textContent = '이미지가 너무 커서 저장하지 못했어요. 더 작은 이미지로 다시 시도해 주세요.';
+      return;
+    }
+
+    applyBgImage();
+    refreshBgModalPreview();
+    const sizeKb = Math.round(lastDataUrl.length * 0.75 / 1024);
+    status.textContent = usedAttemptIndex === 0
+      ? ('배경으로 적용됐어요 (약 ' + sizeKb + 'KB로 압축됨)')
+      : ('배경으로 적용됐어요 (저장 공간에 맞춰 자동으로 화질을 낮춰 약 ' + sizeKb + 'KB로 압축됨)');
+  }catch(err){
+    bgImage = previousBg;
+    saveData();
+    status.textContent = '이미지를 불러오지 못했어요. 다른 파일로 시도해 주세요.';
+  }
+});
+
+document.getElementById('bg-remove').addEventListener('click', () => {
+  bgImage = null;
+  applyBgImage();
+  saveData();
+  refreshBgModalPreview();
+  document.getElementById('bg-status').textContent = '배경 이미지를 제거했어요.';
+});
+
+// ---- 데이터 백업 (내보내기 / 가져오기) ----
+// 앱 삭제, 기기 변경, 저장 공간 초기화 시 데이터가 사라지는 것을 막기 위한 수동 백업 기능.
+// 자산 항목, 월별 현황, 대시보드 이름, 테마, 배경 이미지를 하나의 JSON 파일로 내보내고 다시 불러올 수 있음.
+document.getElementById('backup-export-btn').addEventListener('click', async () => {
+  try{
+    const payload = { assets, months, appName, theme, bgImage, exportedAt: new Date().toISOString(), appVersion: 'asset_dashboard_v1' };
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const filename = '자산대시보드_백업_' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '.json';
+    await saveOrShareBlob(blob, filename);
+  }catch(err){
+    alert('백업 파일을 만들지 못했어요. 다시 시도해 주세요.');
+  }
+});
+
+document.getElementById('backup-import-btn').addEventListener('click', () => {
+  document.getElementById('backup-import-input').click();
+});
+
+document.getElementById('backup-import-input').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = ''; // 같은 파일을 다시 선택해도 change 이벤트가 발생하도록 초기화
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try{
+      parsed = JSON.parse(reader.result);
+    }catch(err){
+      alert('올바른 백업 파일이 아니에요.');
+      return;
+    }
+    if(!parsed || !Array.isArray(parsed.assets) || !Array.isArray(parsed.months)){
+      alert('올바른 백업 파일이 아니에요.');
+      return;
+    }
+    const ok = confirm('백업을 불러오면 현재 기기에 저장된 데이터를 덮어써요. 계속할까요?');
+    if(!ok) return;
+
+    assets = parsed.assets;
+    months = parsed.months.filter(m => m && typeof m.year === 'number' && typeof m.month === 'number');
+    appName = (typeof parsed.appName === 'string' && parsed.appName.trim()) ? parsed.appName.trim() : DEFAULT_APP_NAME;
+    theme = (parsed.theme === 'light') ? 'light' : 'dark';
+    bgImage = (typeof parsed.bgImage === 'string' && parsed.bgImage) ? parsed.bgImage : null;
+    editingAssetIndex = null; // 가져오기로 자산 배열이 통째로 바뀌므로 이전 인라인 수정 상태는 무효화
+
+    const savedOk = saveData();
+    applyAppName();
+    applyTheme();
+    renderAssets();
+    if(!savedOk){
+      alert('백업을 불러왔지만 기기 저장 공간 부족으로 저장은 되지 않았어요. (배경 이미지가 큰 경우 배경 이미지를 다시 제거·설정해 보세요)');
+    }
+  };
+  reader.onerror = () => alert('파일을 읽지 못했어요.');
+  reader.readAsText(file);
+});
+
+// ---- 손가락 두 개로 화면 전체 확대/축소 ----
+// 네이티브 WebView 설정과 무관하게 항상 동작하도록, 터치 제스처를 직접 인식해서
+// 화면 전체(zoomTarget)에 CSS zoom을 적용. 모달/토스트는 이 대상 밖에 있어서 영향받지 않음.
+(function(){
+  const zoomTarget = document.getElementById('pinch-zoom-wrap');
+  const chip = document.getElementById('zoom-reset-chip');
+  const chipLabel = document.getElementById('zoom-reset-label');
+  if(!zoomTarget) return;
+
+  const MIN_ZOOM = 0.6;
+  const MAX_ZOOM = 2.5;
+  let zoom = 1;
+  let startDist = 0;
+  let startZoom = 1;
+  let pinching = false;
+
+  function getDistance(touches){
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function applyZoom(z){
+    zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
+    zoomTarget.style.zoom = zoom;
+    if(Math.abs(zoom - 1) > 0.02){
+      chip.classList.add('show');
+      chipLabel.textContent = Math.round(zoom * 100) + '%';
+    } else {
+      chip.classList.remove('show');
+    }
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    if(e.touches.length === 2){
+      pinching = true;
+      startDist = getDistance(e.touches);
+      startZoom = zoom;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if(pinching && e.touches.length === 2){
+      e.preventDefault();
+      const dist = getDistance(e.touches);
+      if(startDist > 0){
+        applyZoom(startZoom * (dist / startDist));
+      }
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if(e.touches.length < 2) pinching = false;
+  });
+  document.addEventListener('touchcancel', () => { pinching = false; });
+
+  chip.addEventListener('click', () => applyZoom(1));
+})();
+</script>
+</body>
+</html>
