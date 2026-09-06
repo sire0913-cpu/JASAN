@@ -72,7 +72,7 @@
 
   .header-title-row{
     display:flex; align-items:center; gap:2px; flex-wrap:wrap;
-    margin-bottom:16px;
+    margin-bottom:0;
   }
   .header-title-row h1{
     font-size:21px; font-weight:600; margin:0; letter-spacing:-0.01em;
@@ -83,7 +83,7 @@
   .grid{
     display:grid;
     grid-template-columns: 1fr 1fr;
-    gap:16px;
+    gap:10px;
     width:100%;
     min-width:0;
   }
@@ -92,7 +92,7 @@
   /* 가로(랜드스케이프) 폰 화면: 카드 2개를 유지하되 여백/폰트를 조금 줄여 화면에 맞춤 */
   @media (orientation:landscape) and (max-height:500px){
     body{ padding-top:calc(14px + env(safe-area-inset-top)); padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
-    .header-title-row{ margin-bottom:12px; }
+    .header-title-row{ margin-bottom:0; }
     .card{ padding:14px 16px; }
     .hero-num{ font-size:26px; }
   }
@@ -347,7 +347,6 @@
     display:grid;
     grid-template-columns:repeat(2, 1fr);
     gap:10px;
-    margin-top:10px;
   }
   .ad-banner{
     position:relative;
@@ -419,16 +418,6 @@
   }
   .modal h3{ margin:0 0 4px; font-size:17px; font-weight:700; }
   .modal .modal-sub{ color:var(--text-3); font-size:13px; margin-bottom:18px; }
-  .step{
-    display:flex; gap:12px; margin-bottom:16px; align-items:flex-start;
-  }
-  .step-num{
-    width:24px; height:24px; border-radius:50%; background:var(--blue);
-    color:#fff; font-size:12px; font-weight:700; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center; margin-top:1px;
-  }
-  .step-text{ font-size:14px; line-height:1.5; color:var(--text-1); }
-  .step-text b{ color:var(--teal); }
   .modal-close{
     width:100%; margin-top:6px; background:var(--card-2);
     border:1px solid var(--border-strong); color:var(--text-2);
@@ -439,15 +428,6 @@
 <div id="zoom-reset-chip"><span>🔍</span><span id="zoom-reset-label">100%</span><span> · 원래대로</span></div>
 
 <!-- 화면 확대/축소(핀치줌) 대상 밖에 둬야 하는 고정 위치 요소들: 모달, 토스트 -->
-<div class="modal-overlay" id="modal-overlay">
-  <div class="modal">
-    <h3 id="modal-title">홈 화면에 추가</h3>
-    <div class="modal-sub" id="modal-sub">아래 단계를 따라해 보세요</div>
-    <div id="modal-steps"></div>
-    <button class="modal-close" id="modal-close">닫기</button>
-  </div>
-</div>
-
 <div class="modal-overlay" id="snapshot-overlay">
   <div class="modal">
     <h3 id="snapshot-title">포트폴리오</h3>
@@ -504,7 +484,6 @@
     <button id="title-edit-btn" aria-label="이름 변경" title="이름 변경" style="background:transparent;border:none;color:var(--text-3);font-size:14px;padding:2px 6px;cursor:pointer;">✎</button>
     <div class="header-actions">
       <span class="save-badge"><span class="save-dot"></span>자동 저장됨</span>
-      <button class="add-home-btn" id="add-home-open">📲 홈 화면에 추가</button>
     </div>
   </div>
 
@@ -535,6 +514,7 @@
         <select id="a-type" style="width:110px;">
           <option value="krw">원화</option>
           <option value="usd">달러(USD)</option>
+          <option value="jpy">엔화(JPY)</option>
           <option value="gold">금(g)</option>
         </select>
       </div>
@@ -554,6 +534,17 @@
         </div>
         <div class="row-input">
           <button class="ghost" id="a-usd-fetch" type="button" style="width:100%;">🔄 환율 새로고침</button>
+        </div>
+      </div>
+
+      <div id="a-fields-jpy" style="display:none;">
+        <span class="field-label">보유 수량 · 적용 환율 (100엔 기준)</span>
+        <div class="row-input">
+          <input type="number" id="a-jpy-qty" placeholder="수량(JPY)" style="flex:1; width:auto; min-width:100px;">
+          <input type="number" id="a-jpy-rate" placeholder="환율(원/100엔)" style="flex:1; width:auto; min-width:100px;">
+        </div>
+        <div class="row-input">
+          <button class="ghost" id="a-jpy-fetch" type="button" style="width:100%;">🔄 환율 새로고침</button>
         </div>
       </div>
 
@@ -1187,14 +1178,17 @@ function escapeHtml(s){
 const typeFields = {
   krw: document.getElementById('a-fields-krw'),
   usd: document.getElementById('a-fields-usd'),
+  jpy: document.getElementById('a-fields-jpy'),
   gold: document.getElementById('a-fields-gold')
 };
 document.getElementById('a-type').addEventListener('change', (e) => {
   Object.keys(typeFields).forEach(k => typeFields[k].style.display = (k === e.target.value) ? 'block' : 'none');
   document.getElementById('a-fetch-status').textContent = '';
-  // 달러/금을 선택하면 값이 비어있는 경우에 한해 오늘 기준 환율·시세를 자동으로 조회해 채워줌
+  // 달러/엔화/금을 선택하면 값이 비어있는 경우에 한해 오늘 기준 환율·시세를 자동으로 조회해 채워줌
   if(e.target.value === 'usd' && !document.getElementById('a-usd-rate').value){
     fetchUsdKrwRate();
+  } else if(e.target.value === 'jpy' && !document.getElementById('a-jpy-rate').value){
+    fetchJpyKrwRate();
   } else if(e.target.value === 'gold' && !document.getElementById('a-gold-rate').value){
     fetchGoldRate();
   }
@@ -1203,6 +1197,7 @@ document.getElementById('a-type').addEventListener('change', (e) => {
 // 짧은 시간 안에 반복 조회하지 않도록 환율/금시세를 잠깐 메모리에 캐시해 둠 (새로고침 전까지만 유지)
 const RATE_CACHE_TTL_MS = 5 * 60 * 1000; // 5분
 let usdRateCache = null; // { rate, time }
+let jpyRateCache = null; // { rate, time } - 100엔 기준 원화
 let goldRateCache = null; // { rate, time }
 
 async function fetchUsdKrwRate(){
@@ -1223,6 +1218,30 @@ async function fetchUsdKrwRate(){
     usdRateCache = { rate: rounded, time: now };
     document.getElementById('a-usd-rate').value = rounded;
     status.textContent = '오늘 환율로 자동 입력됨 (직접 수정 가능)';
+  }catch(e){
+    status.textContent = '환율 자동 조회 실패. 직접 입력해 주세요.';
+  }
+}
+
+async function fetchJpyKrwRate(){
+  const status = document.getElementById('a-fetch-status');
+  const now = Date.now();
+  if(jpyRateCache && (now - jpyRateCache.time) < RATE_CACHE_TTL_MS){
+    document.getElementById('a-jpy-rate').value = jpyRateCache.rate;
+    status.textContent = '오늘 환율로 자동 입력됨 (100엔 기준, 직접 수정 가능)';
+    return;
+  }
+  status.textContent = '오늘 환율 조회 중...';
+  try{
+    // JPY 기준 환율을 조회한 뒤, KRW/JPY 로 환산 → 100엔 단위로 변환 (국내 관례상 100엔 기준 고시)
+    const res = await fetch('https://open.er-api.com/v6/latest/JPY');
+    const data = await res.json();
+    const rate = data && data.rates && data.rates.KRW;
+    if(!rate) throw new Error('no rate');
+    const per100 = Math.round(rate * 100);
+    jpyRateCache = { rate: per100, time: now };
+    document.getElementById('a-jpy-rate').value = per100;
+    status.textContent = '오늘 환율로 자동 입력됨 (100엔 기준, 직접 수정 가능)';
   }catch(e){
     status.textContent = '환율 자동 조회 실패. 직접 입력해 주세요.';
   }
@@ -1276,6 +1295,7 @@ async function fetchGoldRate(){
 }
 
 document.getElementById('a-usd-fetch').addEventListener('click', () => { usdRateCache = null; fetchUsdKrwRate(); });
+document.getElementById('a-jpy-fetch').addEventListener('click', () => { jpyRateCache = null; fetchJpyKrwRate(); });
 document.getElementById('a-gold-fetch').addEventListener('click', () => { goldRateCache = null; fetchGoldRate(); });
 
 document.getElementById('a-add').addEventListener('click', () => {
@@ -1314,6 +1334,19 @@ document.getElementById('a-add').addEventListener('click', () => {
     }
     value = (qty * rate) / 10000;
     detail = fmt(qty) + ' USD × ' + fmt(rate) + '원/USD';
+    qtyEl.value = ''; rateEl.value = '';
+  } else if(type === 'jpy'){
+    const qtyEl = document.getElementById('a-jpy-qty');
+    const rateEl = document.getElementById('a-jpy-rate');
+    const qty = parseFloat(qtyEl.value);
+    const rate = parseFloat(rateEl.value);
+    if(isNaN(qty) || qty <= 0 || isNaN(rate) || rate <= 0){
+      err.textContent = '수량(JPY)과 환율을 모두 입력하세요.';
+      err.style.display = 'block';
+      return;
+    }
+    value = (qty * (rate / 100)) / 10000; // rate는 100엔 기준이므로 100으로 나눠 1엔당 원화로 환산
+    detail = fmt(qty) + ' JPY × ' + fmt(rate) + '원/100엔';
     qtyEl.value = ''; rateEl.value = '';
   } else if(type === 'gold'){
     const qtyEl = document.getElementById('a-gold-qty');
@@ -1479,69 +1512,6 @@ document.addEventListener('visibilitychange', () => {
 // 앱을 계속 켜놓고 있는 경우를 위한 보조 확인(1분마다)
 setInterval(checkForMonthChange, 60000);
 
-function detectPlatform(){
-  const ua = navigator.userAgent;
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
-  const isAndroid = /Android/.test(ua);
-  const isChrome = /Chrome/.test(ua) && !/Edg|OPR/.test(ua);
-  if(isIOS) return 'ios';
-  if(isAndroid && isChrome) return 'android-chrome';
-  if(isAndroid) return 'android-other';
-  return 'desktop';
-}
-
-const stepsByPlatform = {
-  'ios': {
-    title: 'iOS(사파리)에서 홈 화면에 추가하기',
-    sub: 'iPhone 또는 iPad의 사파리 브라우저에서 진행해 주세요',
-    steps: [
-      '화면 하단(또는 상단)의 <b>공유 버튼</b> □↑ 을 탭하세요.',
-      '메뉴를 아래로 스크롤해서 <b>"홈 화면에 추가"</b>를 탭하세요.',
-      '이름을 확인하고 오른쪽 위 <b>"추가"</b>를 탭하면 완료돼요.'
-    ]
-  },
-  'android-chrome': {
-    title: '안드로이드(크롬)에서 홈 화면에 추가하기',
-    sub: '크롬 브라우저에서 진행해 주세요',
-    steps: [
-      '오른쪽 위 <b>점 3개(메뉴)</b> 아이콘을 탭하세요.',
-      '<b>"홈 화면에 추가"</b> 또는 <b>"앱 설치"</b>를 탭하세요.',
-      '팝업에서 <b>"추가"</b>를 탭하면 완료돼요.'
-    ]
-  },
-  'android-other': {
-    title: '홈 화면에 추가하기',
-    sub: '기기 브라우저 메뉴에서 진행해 주세요',
-    steps: [
-      '브라우저 메뉴(≡ 또는 점 3개)를 여세요.',
-      '<b>"홈 화면에 추가"</b> 항목을 찾아 탭하세요.',
-      '없다면 크롬 브라우저로 이 페이지를 열어서 시도해 보세요.'
-    ]
-  },
-  'desktop': {
-    title: '데스크톱에서 사용하기',
-    sub: '홈 화면 추가는 모바일 기능이에요',
-    steps: [
-      '이 기능은 스마트폰/태블릿 브라우저에서만 지원돼요.',
-      '이 파일을 스마트폰으로 옮기거나, 링크로 접속한 뒤 다시 시도해 주세요.',
-      '데스크톱에서는 즐겨찾기(Ctrl/Cmd+D)로 저장해 두시면 편해요.'
-    ]
-  }
-};
-
-let deferredInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-});
-
-// 이미 설치된 앱(APK) 안에서는 "홈 화면에 추가" 기능 자체가 필요 없으므로 버튼을 숨김
-if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
-  const addHomeBtn = document.getElementById('add-home-open');
-  if(addHomeBtn) addHomeBtn.style.display = 'none';
-}
-
 document.getElementById('theme-toggle-btn').addEventListener('click', () => {
   theme = (theme === 'light') ? 'dark' : 'light';
   applyTheme();
@@ -1689,30 +1659,6 @@ document.getElementById('save-image-btn').addEventListener('click', async () => 
     btn.disabled = false;
     btn.textContent = originalText;
   }
-});
-
-document.getElementById('add-home-open').addEventListener('click', async () => {
-  if(deferredInstallPrompt){
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
-    deferredInstallPrompt = null;
-    return;
-  }
-  const platform = detectPlatform();
-  const data = stepsByPlatform[platform];
-  document.getElementById('modal-title').textContent = data.title;
-  document.getElementById('modal-sub').textContent = data.sub;
-  document.getElementById('modal-steps').innerHTML = data.steps.map((s, i) =>
-    '<div class="step"><span class="step-num">' + (i+1) + '</span><span class="step-text">' + s + '</span></div>'
-  ).join('');
-  document.getElementById('modal-overlay').classList.add('open');
-});
-
-document.getElementById('modal-close').addEventListener('click', () => {
-  document.getElementById('modal-overlay').classList.remove('open');
-});
-document.getElementById('modal-overlay').addEventListener('click', (e) => {
-  if(e.target.id === 'modal-overlay') document.getElementById('modal-overlay').classList.remove('open');
 });
 
 let snapshotChart = null;
@@ -1891,14 +1837,14 @@ if('serviceWorker' in navigator){
   pushGuardState(); // 페이지 로드 시 더미 상태를 한 번 쌓아둠
 
   function anyModalOpen(){
-    return ['modal-overlay', 'snapshot-overlay', 'bg-modal-overlay'].some(id => {
+    return ['snapshot-overlay', 'bg-modal-overlay'].some(id => {
       const el = document.getElementById(id);
       return el && el.classList.contains('open');
     });
   }
 
   function closeOpenModals(){
-    ['modal-overlay', 'snapshot-overlay', 'bg-modal-overlay'].forEach(id => {
+    ['snapshot-overlay', 'bg-modal-overlay'].forEach(id => {
       const el = document.getElementById(id);
       if(el) el.classList.remove('open');
     });
