@@ -69,16 +69,17 @@
     min-height:100dvh;
   }
   .wrap{ max-width:1100px; margin:0 auto; width:100%; }
-  header{
-    display:flex; align-items:flex-start; justify-content:space-between;
-    margin-bottom:28px; flex-wrap:wrap; gap:10px;
+
+  .header-title-row{
+    display:flex; align-items:center; gap:2px; flex-wrap:wrap;
+    margin-bottom:16px;
   }
-  header h1{
+  .header-title-row h1{
     font-size:21px; font-weight:600; margin:0; letter-spacing:-0.01em;
   }
-  header .sub{ color:var(--text-3); font-size:13px; }
-  .header-title-row{ display:flex; align-items:center; gap:2px; flex-wrap:wrap; }
-  .save-badge{ margin-top:6px; }
+  .header-title-row .header-actions{ margin-left:auto; }
+  .save-badge{ margin-top:0; }
+
   .grid{
     display:grid;
     grid-template-columns: 1fr 1fr;
@@ -91,7 +92,7 @@
   /* 가로(랜드스케이프) 폰 화면: 카드 2개를 유지하되 여백/폰트를 조금 줄여 화면에 맞춤 */
   @media (orientation:landscape) and (max-height:500px){
     body{ padding-top:calc(14px + env(safe-area-inset-top)); padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
-    header{ margin-bottom:16px; }
+    .header-title-row{ margin-bottom:12px; }
     .card{ padding:14px 16px; }
     .hero-num{ font-size:26px; }
   }
@@ -498,18 +499,14 @@
 <div id="pinch-zoom-wrap">
 <div class="wrap">
 
-  <header>
-    <div>
-      <div class="header-title-row">
-        <h1 id="app-title" style="display:inline">자산 포트폴리오 대시보드</h1>
-        <button id="title-edit-btn" aria-label="이름 변경" title="이름 변경" style="background:transparent;border:none;color:var(--text-3);font-size:14px;padding:2px 6px;cursor:pointer;">✎</button>
-      </div>
-      <span class="save-badge"><span class="save-dot"></span>자동 저장됨</span>
-    </div>
+  <div class="header-title-row">
+    <h1 id="app-title" style="display:inline">자산 포트폴리오 대시보드</h1>
+    <button id="title-edit-btn" aria-label="이름 변경" title="이름 변경" style="background:transparent;border:none;color:var(--text-3);font-size:14px;padding:2px 6px;cursor:pointer;">✎</button>
     <div class="header-actions">
+      <span class="save-badge"><span class="save-dot"></span>자동 저장됨</span>
       <button class="add-home-btn" id="add-home-open">📲 홈 화면에 추가</button>
     </div>
-  </header>
+  </div>
 
   <div class="grid">
 
@@ -630,7 +627,7 @@
     <a class="ad-banner" href="https://naver.me/5c8Xm2kR" target="_blank" rel="noopener noreferrer">
       <span class="ad-tag">AD</span>
       <span class="ad-title">💰 재테크바로서기</span>
-      <span class="ad-desc">돈 되는 정보가 모이는 곳 →</span>
+      <span class="ad-desc">네이버카페 재테크바로서기</span>
     </a>
     <div class="backup-row">
       <button class="add-home-btn" id="backup-export-btn"><span class="btn-icon">⬇️</span><span>백업 저장</span></button>
