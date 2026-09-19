@@ -615,9 +615,9 @@
     <button class="add-home-btn" id="theme-toggle-btn"><span class="btn-icon">🌗</span><span>테마 변경</span></button>
     <button class="add-home-btn" id="bg-image-open"><span class="btn-icon">🎨</span><span>배경 이미지</span></button>
     <button class="add-home-btn" id="save-image-btn"><span class="btn-icon">🖼️</span><span>이미지로 저장</span></button>
-    <a class="ad-banner" href="https://naver.me/5c8Xm2kR" target="_blank" rel="noopener noreferrer">
+    <a class="ad-banner" href="https://cafe.naver.com/barogi?tc=shared_link" target="_blank" rel="noopener noreferrer">
       <span class="ad-tag">AD</span>
-      <span class="ad-title">💰 재테크바로서기</span>
+      <span class="ad-title">재테크바로서기</span>
       <span class="ad-desc">네이버카페 재테크바로서기</span>
     </a>
     <div class="backup-row">
@@ -627,7 +627,7 @@
     <input type="file" id="backup-import-input" accept="application/json,.json" style="display:none;">
   </div>
 
-  <a class="footer-link" href="https://naver.me/5c8Xm2kR" target="_blank" rel="noopener noreferrer">Ⓒ 재테크바로서기</a>
+  <a class="footer-link" href="https://cafe.naver.com/barogi?tc=shared_link" target="_blank" rel="noopener noreferrer">Ⓒ 재테크바로서기</a>
   <div class="save-watermark">재테크바로서기 네이버카페로 초대합니다</div>
 
 </div>
@@ -674,10 +674,10 @@ const STORAGE_KEY = 'asset_dashboard_v1';
 function genDefaultMonths(){
   const now = new Date();
   const arr = [];
-  const sample = [100, 240, 340, 460, 600, 680];
-  for(let i = 5; i >= 0; i--){
+  const sample = [900, 980, 1050, 1120, 1200, 1280, 1350];
+  for(let i = 6; i >= 0; i--){
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    arr.push({ year: d.getFullYear(), month: d.getMonth() + 1, value: sample[5 - i] });
+    arr.push({ year: d.getFullYear(), month: d.getMonth() + 1, value: sample[6 - i] });
   }
   return arr;
 }
@@ -711,12 +711,10 @@ function loadData(){
       months = months.map(m => (m && typeof m.year === 'number') ? m : null).filter(Boolean);
     } else {
       assets = [
-        {name:'국내주식', value:400},
-        {name:'해외주식', value:300},
-        {name:'채권', value:200},
-        {name:'부동산', value:800},
-        {name:'삼성전자', value:150},
-        {name:'SK하이닉스', value:100}
+        {name:'국내주식', value:450},
+        {name:'해외주식', value:380},
+        {name:'현금', value:220},
+        {name:'적금', value:300}
       ];
       months = genDefaultMonths();
       appName = DEFAULT_APP_NAME;
